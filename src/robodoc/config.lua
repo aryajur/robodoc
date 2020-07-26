@@ -68,36 +68,51 @@ header_types = {
 		fileName = "arrays",
 		priority = 0, 	-- Optional (default = 0 same as predefined header types)
 	}
+}
+
+keywords = {
+	"for",
+	"if",
+	"else",
+	"then",
+}
+options = [[
+    --index
+    --tabsize 8
+    --documenttitle "Code Documentation"
+    --tell
+]]
 ]=]
 configuration = {
-	items,--,-- = {},
-	ignore_items,-- = {},
-	source_items,-- = {},
-	preformatted_items,-- = {},
-	format_items,-- = {},
-	--item_order,-- = {},  -- Combined to items. The order they appear in items is the order as well
-	options,-- = {},
-	ignore_files,-- = {},
-	accept_files,-- = {},
-	headertypes,-- = {},
-	header_markers,-- = {},
-	remark_markers,-- = {},
-	end_markers,-- = {},
-	remark_begin_markers,-- = {},
-	remark_end_markers,-- = {},
-	keywords,-- = {},
-	source_line_comments,-- = {},
-	header_ignore_chars,-- = {},
-	header_separate_chars-- = {}	
+	items=nil,-- = {},
+	ignore_items=nil,-- = {},
+	source_items=nil,-- = {},
+	preformatted_items=nil,-- = {},
+	format_items=nil,-- = {},
+	--item_order=nil,-- = {},  -- Combined to items. The order they appear in items is the order as well
+	ignore_files=nil,-- = {},
+	accept_files=nil,-- = {},
+	headertypes=nil,-- = {},
+	header_markers=nil,-- = {},
+	remark_markers=nil,-- = {},
+	end_markers=nil,-- = {},
+	remark_begin_markers=nil,-- = {},
+	remark_end_markers=nil,-- = {},
+	keywords=nil,-- = {},
+	source_line_comments=nil,-- = {},
+	header_ignore_chars=nil,-- = {},
+	header_separate_chars=nil-- = {}	
 }
 
 local logger = logger
+local parser = parser
 local tu = require("tableUtils")
 
 local pairs = pairs
 local type = type
 local tonumber = tonumber
 local string = string
+local arg = arg		-- Command line arguments
 
 -- Note this file is Lua 5.3 compatible only because the way the load function is used in readConfigFile FUnction
 local M = {}
@@ -241,6 +256,8 @@ local defaultRemark_end_markers = {
     "*}",	
 }
 
+defaultTabSize = 8
+
 -- Characters allowed to be used as headertype typeCharacters
 -- Note in the C code these were assigned so as to lookup directly using the ASCII code
 -- ASCII codes that lie on typeCharacter = '\0' are therefore not allowed
@@ -277,115 +294,123 @@ local headerTypeDirectory = {
 --    {typeCharacter='\0', indexName=NULL, fileName=NULL, priority=0},
 --    {typeCharacter='\0', indexName=NULL, fileName=NULL, priority=0},
 --    {typeCharacter='\0', indexName=NULL, fileName=NULL, priority=0},
-    {typeCharacter=' ', NULL, NULL, 0},
-    {typeCharacter='!', NULL, NULL, 0},
-    {typeCharacter='"', NULL, NULL, 0},
-    {typeCharacter='#', NULL, NULL, 0},
-    {typeCharacter='$', NULL, NULL, 0},
-    {typeCharacter='%', NULL, NULL, 0},
-    {typeCharacter='&', NULL, NULL, 0},
+    {typeCharacter=' ', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='!', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='"', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='#', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='$', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='%', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='&', indexName=nil, fileName=nil, priority=0},
 --    {typeCharacter='\0', indexName=NULL, fileName=NULL, priority=0},
-    {typeCharacter='(', NULL, NULL, 0},
-    {typeCharacter=')', NULL, NULL, 0},
-    {typeCharacter='*', "Generics", "robo_generics", 0},
-    {typeCharacter='+', NULL, NULL, 0},
-    {typeCharacter=',', NULL, NULL, 0},
-    {typeCharacter='-', NULL, NULL, 0},
-    {typeCharacter='.', NULL, NULL, 0},
-    {typeCharacter='/', NULL, NULL, 0},
-    {typeCharacter='0', NULL, NULL, 0},
-    {typeCharacter='1', NULL, NULL, 0},
-    {typeCharacter='2', NULL, NULL, 0},
-    {typeCharacter='3', NULL, NULL, 0},
-    {typeCharacter='4', NULL, NULL, 0},
-    {typeCharacter='5', NULL, NULL, 0},
-    {typeCharacter='6', NULL, NULL, 0},
-    {typeCharacter='7', NULL, NULL, 0},
-    {typeCharacter='8', NULL, NULL, 0},
-    {typeCharacter='9', NULL, NULL, 0},
-    {typeCharacter=':', NULL, NULL, 0},
-    {typeCharacter=';', NULL, NULL, 0},
-    {typeCharacter='<', NULL, NULL, 0},
-    {typeCharacter='=', NULL, NULL, 0},
-    {typeCharacter='>', NULL, NULL, 0},
-    {typeCharacter='?', NULL, NULL, 0},
-    {typeCharacter='@', NULL, NULL, 0},
-    {typeCharacter='A', NULL, NULL, 0},
-    {typeCharacter='B', "Businessrules", "robo_businessrules", 0},
-    {typeCharacter='C', "Contracts", "robo_contracts", 0},
-    {typeCharacter='D', "Datasources", "robo_datasources", 0},
-    {typeCharacter='E', "Ensure contracts", "robo_ensure_contracts", 0},
-    {typeCharacter='F', NULL, NULL, 0},
-    {typeCharacter='G', NULL, NULL, 0},
-    {typeCharacter='H', NULL, NULL, 0},
-    {typeCharacter='I', "Invariants", "robo_invariants", 0},
-    {typeCharacter='J', NULL, NULL, 0},
-    {typeCharacter='K', NULL, NULL, 0},
-    {typeCharacter='L', NULL, NULL, 0},
-    {typeCharacter='M', "Metadata", "robo_metadata", 0},
-    {typeCharacter='N', NULL, NULL, 0},
-    {typeCharacter='O', NULL, NULL, 0},
-    {typeCharacter='P', "Process", "robo_processes", 0},
-    {typeCharacter='Q', NULL, NULL, 0},
-    {typeCharacter='R', "Require contracts", "robo_require_contracts", 0},
-    {typeCharacter='S', "Subjects", "robo_subjects", 0},
-    {typeCharacter='T', NULL, NULL, 0},
-    {typeCharacter='U', NULL, NULL, 0},
-    {typeCharacter='V', NULL, NULL, 0},
-    {typeCharacter='W', NULL, NULL, 0},
-    {typeCharacter='X', NULL, NULL, 0},
-    {typeCharacter='Y', NULL, NULL, 0},
-    {typeCharacter='Z', NULL, NULL, 0},
-    {typeCharacter='[', NULL, NULL, 0},
+    {typeCharacter='(', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter=')', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='*', indexName="Generics", fileName="robo_generics", priority=0},
+    {typeCharacter='+', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter=',', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='-', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='.', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='/', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='0', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='1', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='2', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='3', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='4', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='5', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='6', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='7', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='8', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='9', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter=':', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter=';', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='<', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='=', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='>', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='?', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='@', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='A', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='B', indexName="Businessrules", fileName="robo_businessrules", priority=0},
+    {typeCharacter='C', indexName="Contracts", fileName="robo_contracts", priority=0},
+    {typeCharacter='D', indexName="Datasources", fileName="robo_datasources", priority=0},
+    {typeCharacter='E', indexName="Ensure contracts", fileName="robo_ensure_contracts", priority=0},
+    {typeCharacter='F', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='G', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='H', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='I', indexName="Invariants", fileName="robo_invariants", priority=0},
+    {typeCharacter='J', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='K', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='L', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='M', indexName="Metadata", fileName="robo_metadata", priority=0},
+    {typeCharacter='N', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='O', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='P', indexName="Process", fileName="robo_processes", priority=0},
+    {typeCharacter='Q', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='R', indexName="Require contracts", fileName="robo_require_contracts", priority=0},
+    {typeCharacter='S', indexName="Subjects", fileName="robo_subjects", priority=0},
+    {typeCharacter='T', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='U', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='V', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='W', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='X', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='Y', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='Z', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='[', indexName=nil, fileName=nil, priority=0},
 --    {typeCharacter='\0', indexName=NULL, fileName=NULL, priority=0},	-- Separator
-    {typeCharacter=']', NULL, NULL, 0},
-    {typeCharacter='^', NULL, NULL, 0},
-    {typeCharacter='_', NULL, NULL, 0},
-    {typeCharacter='`', NULL, NULL, 0},
-    {typeCharacter='a', NULL, NULL, 0},
-    {typeCharacter='b', NULL, NULL, 0},
-    {typeCharacter='c', "Classes", "robo_classes", 0},
-    {typeCharacter='d', "Definitions", "robo_definitions", 0},
-    {typeCharacter='e', "Exceptions", "robo_exceptions", 0},
-    {typeCharacter='f', "Functions", "robo_functions", 0},
-    {typeCharacter='g', NULL, NULL, 0},
-    {typeCharacter='h', "Modules", "robo_modules", 1},
+    {typeCharacter=']', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='^', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='_', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='`', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='a', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='b', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='c', indexName="Classes", fileName="robo_classes", priority=0},
+    {typeCharacter='d', indexName="Definitions", fileName="robo_definitions", priority=0},
+    {typeCharacter='e', indexName="Exceptions", fileName="robo_exceptions", priority=0},
+    {typeCharacter='f', indexName="Functions", fileName="robo_functions", priority=0},
+    {typeCharacter='g', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='h', indexName="Modules", fileName="robo_modules", 1},
 --    {typeCharacter='\0', indexName=NULL, fileName=NULL, priority=0},	-- Internal header flag
-    {typeCharacter='j', NULL, NULL, 0},
-    {typeCharacter='k', NULL, NULL, 0},
-    {typeCharacter='l', NULL, NULL, 0},
-    {typeCharacter='m', "Methods", "robo_methods", 0},
-    {typeCharacter='n', NULL, NULL, 0},
-    {typeCharacter='o', NULL, NULL, 0},
-    {typeCharacter='p', "Procedures", "robo_procedures", 0},
-    {typeCharacter='q', NULL, NULL, 0},
-    {typeCharacter='r', NULL, NULL, 0},
-    {typeCharacter='s', "Structures", "robo_strutures", 0},
-    {typeCharacter='t', "Types", "robo_types", 0},
-    {typeCharacter='u', "Unittest", "robo_unittests", 0},
-    {typeCharacter='v', "Variables", "robo_variables", 0},
-    {typeCharacter='w', "Warehouses", "robo_warehouses", 0},
-    {typeCharacter='x', NULL, NULL, 0},
-    {typeCharacter='y', NULL, NULL, 0},
-    {typeCharacter='z', NULL, NULL, 0},
-    {typeCharacter='{', NULL, NULL, 0},
-    {typeCharacter='|', NULL, NULL, 0},
-    {typeCharacter='}', NULL, NULL, 0},
-    {typeCharacter='~', NULL, NULL, 0},
-    {typeCharacter='\0', NULL, NULL, 0}	
+    {typeCharacter='j', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='k', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='l', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='m', indexName="Methods", fileName="robo_methods", priority=0},
+    {typeCharacter='n', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='o', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='p', indexName="Procedures", fileName="robo_procedures", priority=0},
+    {typeCharacter='q', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='r', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='s', indexName="Structures", fileName="robo_strutures", priority=0},
+    {typeCharacter='t', indexName="Types", fileName="robo_types", priority=0},
+    {typeCharacter='u', indexName="Unittest", fileName="robo_unittests", priority=0},
+    {typeCharacter='v', indexName="Variables", fileName="robo_variables", priority=0},
+    {typeCharacter='w', indexName="Warehouses", fileName="robo_warehouses", priority=0},
+    {typeCharacter='x', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='y', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='z', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='{', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='|', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='}', indexName=nil, fileName=nil, priority=0},
+    {typeCharacter='~', indexName=nil, fileName=nil, priority=0},
+--    {typeCharacter='\0', indexName=NULL, fileName=NULL, priority=0},
 }
 
 -- Function to validate the configuration file data
 local function validateConfigFile(config)
 	local arrStrings = {
 		"items",
+		"ignore_items",
+		"source_items",
 		"header_markers",
 		"remark_markers",
 		"end_markers",
 		"header_separate_chars",
 		"header_ignore_chars",
 		"remark_begin_markers",
-		"remark_end_markers"		
+		"remark_end_markers",
+		"keywords",
+		"ignore_files",
+		"accept_files",
+		"source_line_comments",
+		"preformatted_items",
+		"format_items",
 	}
 	local function checkArrayType(arr,Name,typ)
 		local len = #arr
@@ -420,6 +445,9 @@ local function validateConfigFile(config)
 			end
 			if not v.typeCharacter or type(v.typeCharacter) ~= "string" or #v.typeCharacter ~= 1 then
 				return nil,"headertype definition should have a single letter typeCharacter."
+			end
+			if not tu.inArray(headerTypeDirectory,v.typeCharacter,function(one,two) return one.typeCharacter == two end) then
+				return nil,"headertype typeCharacter: "..v.typeCharacter.." not allowed."
 			end
 			if not v.indexName or type(v.indexName) ~= "string" then
 				return nil,"headertype indexName should be a string to indicate the name of heading under which all the headers are placed."
@@ -469,10 +497,29 @@ end
 
 -- Function to setup the configuration from the given configuration
 function setupConfig(config)
-	configuration = {}
-	if not config.items then
-		configuration.items = defaultItems
-	else
+	configuration = {
+		items = defaultItems,
+		header_markers = defaultHeader_markers,
+		remark_markers = defaultRemark_markers,
+		end_markers = defaultEnd_markers,
+		header_separate_chars = defaultHeader_separate_chars,
+		header_ignore_chars = defaultHeader_ignore_chars,
+		remark_begin_markers = defaultRemark_begin_markers,
+		remark_end_markers = defaultRemark_end_markers,
+	}
+	-- Read the options from the configuration file
+	local opts = {}
+	if config and config.options then
+		local options = " "..config.options
+		for o in config.options:gmatch("%s%s*([^%s]+)") do
+			opts[#opts + 1] = o
+		end
+	end
+	for i = 1,#arg do
+		opts[#opts + 1] = arg[i]
+	end
+	local args = parser:parse(opts)
+	if config and config.items then
 		configuration.items = config.items
 		stat = tu.inArray(configuration.items,"SOURCE")
 		if not stat then
@@ -482,39 +529,39 @@ function setupConfig(config)
 			table.insert(configuration.items,1,"SOURCE")
 		end	
 	end
-	if config.header_markers then
-		configuration.header_markers = config.header_markers
-	else
-		configuration.header_markers = defaultHeader_markers
+	local arrStrings = {
+		-- The following have defaults
+		"header_markers",
+		"remark_markers",
+		"end_markers",
+		"header_separate_chars",
+		"header_ignore_chars",
+		"remark_begin_markers",
+		"remark_end_markers",
+		
+		-- The following do not have defaults
+		"keywords",
+		"ignore_items",
+		"source_items",
+		"ignore_files",
+		"accept_files",
+		"source_line_comments",
+		"preformatted_items",
+		"format_items",
+	}
+	for i = 1,#arrStrings do
+		if config and config[arrStrings[i]] then
+			configuration[arrStrings[i]] = config[arrStrings[i]]
+		end
 	end
-	if config.remark_markers then
-		configuration.remark_markers = config.remark_markers
-	else
-		configuration.remark_markers = defaultRemark_markers
+	configuration.headertypes = tu.copyTable(headerTypeDirectory,{},true)
+	if config and config.headertypes then
+		for i =1,#config.headertypes do
+			local index = tu.inArray(configuration.headertypes,config.headertypes[i],function(one,two) 
+					return one.typeCharacter == two.typeCharacter 
+				end)
+			configuration.headertypes[index] = config.headertypes[i]
+		end
 	end
-	if config.end_markers then
-		configuration.end_markers = config.end_markers
-	else
-		configuration.end_markers = defaultEnd_markers
-	end
-	if config.header_separate_chars then
-		configuration.header_separate_chars = config.header_separate_chars
-	else
-		configuration.header_separate_chars = defaultHeader_separate_chars
-	end
-	if config.header_ignore_chars then
-		configuration.header_ignore_chars = config.header_ignore_chars
-	else
-		configuration.header_ignore_chars = defaultHeader_ignore_chars
-	end
-	if config.remark_begin_markers then
-		configuration.remark_begin_markers = config.remark_begin_markers
-	else
-		configuration.remark_begin_markers = defaultRemark_begin_markers
-	end
-	if config.remark_end_markers then
-		configuration.remark_end_markers = config.remark_end_markers
-	else
-		configuration.remark_end_markers = defaultRemark_end_markers
-	end	
+	return args
 end
