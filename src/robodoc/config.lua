@@ -83,6 +83,27 @@ options = [[
     --tell
 ]]
 ]=]
+
+local globals = require("robodoc.globals")
+local logger = globals.logger
+local parser = globals.parser
+local tu = require("tableUtils")
+
+local pairs = pairs
+local type = type
+local tonumber = tonumber
+local string = string
+local arg = arg		-- Command line arguments
+
+-- Note this file is Lua 5.3 compatible only because the way the load function is used in readConfigFile FUnction
+local M = {}
+package.loaded[...] = M
+if setfenv and type(setfenv) == "function" then
+	setfenv(1,M)	-- Lua 5.1
+else
+	_ENV = M		-- Lua 5.2
+end
+--[[
 configuration = {
 	items=nil,-- = {},
 	ignore_items=nil,-- = {},
@@ -101,27 +122,12 @@ configuration = {
 	keywords=nil,-- = {},
 	source_line_comments=nil,-- = {},
 	header_ignore_chars=nil,-- = {},
-	header_separate_chars=nil-- = {}	
+	header_separate_chars=nil,-- = {}	
+	tab_stops = nil,		-- Tab stops array. Each array location has a number which tells how many spaces for that tab
+	dot_name = "dot",		-- Path of the DOT tool
+	header_breaks = 2,		-- Insert a linebreak after every NUMBER header names (default value: 2, set to zero to disable)	
 }
-
-local logger = logger
-local parser = parser
-local tu = require("tableUtils")
-
-local pairs = pairs
-local type = type
-local tonumber = tonumber
-local string = string
-local arg = arg		-- Command line arguments
-
--- Note this file is Lua 5.3 compatible only because the way the load function is used in readConfigFile FUnction
-local M = {}
-package.loaded[...] = M
-if setfenv and type(setfenv) == "function" then
-	setfenv(1,M)	-- Lua 5.1
-else
-	_ENV = M		-- Lua 5.2
-end
+]]
 
 local defaultItems = {
     "SOURCE",                   -- source code inclusion 
@@ -234,12 +240,14 @@ local defaultEnd_markers = {
     "<!-- ***",                 -- 24 XML 
 }
 
-local defaultHeader_separate_chars = {
+local defaultHeader_separate_chars = {	-- Delimiter in the names which will separate the names. 
+										-- These characters before the end of line will signal the name continues on the next line
+										-- Every entry should be 1 character only
 	","
 }
 
-local defaultHeader_ignore_chars = {
-    "[",
+local defaultHeader_ignore_chars = {	-- Any patterns that will be replaced by empty string in the extracted names
+    "%[.-%]",
 }
 
 local defaultRemark_begin_markers = {
@@ -256,7 +264,7 @@ local defaultRemark_end_markers = {
     "*}",	
 }
 
-defaultTabSize = 8
+local defaultTabSize = 8
 
 -- Characters allowed to be used as headertype typeCharacters
 -- Note in the C code these were assigned so as to lookup directly using the ASCII code
@@ -434,6 +442,13 @@ local function validateConfigFile(config)
 			end
 		end		
 	end
+	if config.header_separate_chars then
+		for i = 1,#config.header_separate_chars do
+			if #config.header_separate_chars[i] ~= 1 then
+				return nil,"header_separate_chars should be 1 character entries only: "..config.header_separate_chars[i]
+			end
+		end
+	end
 	if config.headertypes then
 		local len = #config.headertypes
 		for k,v in pairs(config.headertypes) do
@@ -497,7 +512,7 @@ end
 
 -- Function to setup the configuration from the given configuration
 function setupConfig(config)
-	configuration = {
+	local configuration = {
 		items = defaultItems,
 		header_markers = defaultHeader_markers,
 		remark_markers = defaultRemark_markers,
@@ -506,12 +521,15 @@ function setupConfig(config)
 		header_ignore_chars = defaultHeader_ignore_chars,
 		remark_begin_markers = defaultRemark_begin_markers,
 		remark_end_markers = defaultRemark_end_markers,
+		dot_name = "dot",		-- Path of the DOT tool
+		header_breaks = 2,		-- Insert a linebreak after every NUMBER header names (default value: 2, set to zero to disable)
 	}
+	globals.configuration = configuration
 	-- Read the options from the configuration file
 	local opts = {}
 	if config and config.options then
 		local options = " "..config.options
-		for o in config.options:gmatch("%s%s*([^%s]+)") do
+		for o in options:gmatch("%s%s*([^%s]+)") do
 			opts[#opts + 1] = o
 		end
 	end
@@ -521,7 +539,7 @@ function setupConfig(config)
 	local args = parser:parse(opts)
 	if config and config.items then
 		configuration.items = config.items
-		stat = tu.inArray(configuration.items,"SOURCE")
+		local stat = tu.inArray(configuration.items,"SOURCE")
 		if not stat then
 			table.insert(configuration.items,1,"SOURCE")
 		elseif stat ~= 1 then
@@ -563,5 +581,138 @@ function setupConfig(config)
 			configuration.headertypes[index] = config.headertypes[i]
 		end
 	end
+	configuration.dot_name = args.dotname
+
+	configuration.header_breaks = args.header_breaks==0 and 255 or args.header_breaks
+	
+	-- setup tab_stops
+	local tab_stops = {}
+	local tabsize = args.tabsize or defaultTabSize
+	if args.tabstops then
+		for i = 1,256 do
+			tab_stops[i] = tabsize*i
+		end	
+	else
+		for i = 1,#args.tabstops do
+			tab_stops[i] = args.tabstops[i]
+		end
+	end
+	configuration.tab_stops = tab_stops
+	if args.masterindex then
+		local index = tu.inArray(configuration.headertypes,string.char(2),function(one,two) 
+				return one.typeCharacter == two 
+			end)
+		configuration.headertypes[index] = {
+			typeCharacter = string.char(2),
+			indexName = args.masterindex[1],
+			fileName = args.masterindex[2],
+			priority = 0
+		}
+	end
+
+	if args.sourceindex then
+		local index = tu.inArray(configuration.headertypes,string.char(1),function(one,two) 
+				return one.typeCharacter == two 
+			end)
+		configuration.headertypes[index] = {
+			typeCharacter = string.char(1),
+			indexName = args.sourceindex[1],
+			fileName = args.sourceindex[2],
+			priority = 0
+		}
+	end
 	return args
+end
+
+-- To populate the list of actions to do
+--[[
+-- Actions
+actions = {
+	do_nosort = true,
+	do_nodesc = true,
+    do_toc= true,
+    do_internal= true,
+    do_internal_only= true,
+    do_tell= true,
+    do_index= true,
+    do_nosource= true,
+    do_sections= true,
+    do_lockheader= true,
+    do_footless= true,
+    do_headless= true,
+    do_nopre= true,
+    do_ignore_case_when_linking= true,
+    do_nogenwith= true,
+    do_sectionnameonly= true,
+    do_verbal= true,
+    do_source_line_numbers= true,
+
+    -- Document modes
+    do_singledoc= true,
+    do_multidoc= true,
+    do_singlefile= true,
+    do_one_file_per_header= true,
+    do_no_subdirectories= true,
+
+    -- Latex options
+    do_altlatex= true,
+    do_latexparts= true,
+
+    -- Syntax coloring
+    do_quotes= true,
+    do_squotes= true,
+    do_line_comments= true,
+    do_block_comments= true,
+    do_keywords= true,
+    do_non_alpha= true,
+}
+]]
+function findActions()
+	local actions = {}
+	local flags = {
+		-- Document modes
+		"singledoc",
+		"singlefile",
+		"multidoc",
+		"no_subdirectories",
+		"one_file_per_header",
+		"sections",
+		"internal",
+		"ignore_case_when_linking",
+		"internalonly",
+		"toc",
+		"index",
+		"nosource",
+		"tell",
+		"debug",
+		"nodesc",
+		"nogeneratedwith",
+		"lockheader",
+		"footless",
+		"verbal",
+		"headless",
+		"nosort",
+		"nopre",
+		"sectionnameonly",
+		"source_line_numbers",
+	}
+	local args = globals.args
+	for i = 1,#flags do
+		if args[flags[i]] then
+			actions["do_"..flags[i]] = true
+		end
+	end
+	if args.syntaxcolors then
+		actions.do_quotes = true
+		actions.do_squotes = true
+		actions.do_line_comments = true
+		actions.do_block_comments = true
+		actions.do_keywords = true
+		actions.do_non_alpha = true
+	elseif args.syntaxcolors_enable then
+		for i = 1,#args.syntaxcolors_enable do
+			actions["do_"..args.syntaxcolors_enable[i]] = true
+		end
+	end
+	return actions
 end

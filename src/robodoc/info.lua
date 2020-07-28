@@ -1,6 +1,7 @@
 -- Information and help text are all stored here
 
-local parser = parser
+local globals = require("robodoc.globals")
+local parser = globals.parser
 local tonumber = tonumber
 local io = io
 
@@ -14,18 +15,6 @@ end
 
 VERSION = "1.20.07.23"
 
-use = [[ROBODoc Version ]]..VERSION..[[(c) 1994-2020 Frans Slothouber, Petteri Kettunen,
-				Gergely Budai, Jacco van Weert and Milind Gupta
-	ROBODoc comes with ABSOLUTELY NO WARRANTY.
-	This is free software, and you are welcome to redistribute it
-    under certain conditions; type `robodoc -c' for details.]]
-	
-
--- options table
-options = {
-    {opt="--dotname NAME",help="Specify the name (and path / options) of DOT tool"},
-    {opt="--header_breaks NUMBER",help="Insert a linebreak after every NUMBER header names (default value: 2, set to zero to disable)"},
-}
 
 parser:option("--rc","Specify an alternate configuration file.","robodoc.rc",io.open,1,1)
 parser:flag("--debug","same as --tell, but with lots more details.")
@@ -33,8 +22,8 @@ parser:flag("--tell","ROBODoc will tell you what it is doing.")
 parser:flag("--license","Print open source license information and exit.")
 parser:flag("--version","Print version info and exit.")
 parser:mutex(
-	parser:flag("--singledoc","Output as a single document.")
-	parser:flag("--singlefile","Output as a single file.")
+	parser:flag("--singledoc","Output as a single document."),
+	parser:flag("--singlefile","Output as a single file."),
 	parser:flag("--multidoc","Output in multiple documents.")
 )
 parser:flag("--no_subdirectories","Do no create documentation subdirectories.")
@@ -68,6 +57,7 @@ parser:flag("--latexparts",help="Make the first module level as PART in LaTeX ou
 ]]
 parser.option("--charset","Add character encoding information."):args(1)
 parser.option("--ext","Set extension for generated files."):args(1)
+parser.option("--srcext","Set extension for source files."):args("+"):count(1)
 parser.option("--css","Specify the stylesheet to use."):convert(io.open):args(1)
 -- The following option for troff was removed. The troff exporter should handle it
 --parsr:option("--compress","Only supported by TROFF output format. Defines by which program manpages will be compressed. Either bzip2 or gzip."):args(1):choices({"bzip2","gzip"})
@@ -83,8 +73,24 @@ parser:option("--tabsize","Set the tab size."):convert(tonumber):args(1)
 parser:option("--tabstops","Set TAB stops"):convert(tonumber):args("1-256")
 parser:option("--masterindex","Specify the title and filename for master index page"):args(2)
 parser:option("--sourceindex","Specify the title and filename for source files index page"):args(2)
-
-
+parser:option("--dotname","Specify the name (and path / options) of DOT tool","dot"):args(1)
+parser:option("--header_breaks","Insert a linebreak after every NUMBER header names (default value: 2, set to zero to disable)",2,tonumber,1)
+parser:option("--src","Source files root path"):args(1):count(1):convert(function(path) 
+		local stat,msg = globals.verifyPath(path)
+		if not stat then
+			return nil,msg
+		else
+			return globals.sanitizePath(path)
+		end
+	end)
+parser:option("--doc","Path of the documentation directory."):args(1):count(1):convert(function(path)
+		local stat,msg = globals.verifyPath(path)
+		if not stat then
+			return nil,msg
+		else
+			return globals.sanitizePath(path)
+		end
+	end)
 	
 authors = {
 	"Frans Slothouber",
