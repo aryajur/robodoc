@@ -47,10 +47,20 @@ end
 -- Command line arguments
 globals.whoami = arg[0]
 
-local args = parser:parse()
-
+local args = parser:parse()	-- Parse just to get the rc file to read the configuration
+-- Steps to load the configuration
+-- # Load and validate the configuration file - done by config.readConfigFile
+-- # Run config.setupConfig to merge all options in the configuration file with the options in the command line arguments and set them up
+--       config.setupConfig returns the final combined arguments
 local cfg = config.readConfigFile(args.rc)	-- read the configuration file given by the name rc
-args = config.setupConfig(cfg)
+do 
+	local msg
+	args,msg = config.setupConfig(cfg)
+	if not args then
+		print("Invalid Arguments: "..msg..". Exiting!")
+		os.exit()
+	end
+end
 globals.args = args
 
 if args.debug then

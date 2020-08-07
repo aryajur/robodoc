@@ -22,9 +22,9 @@ parser:flag("--tell","ROBODoc will tell you what it is doing.")
 parser:flag("--license","Print open source license information and exit.")
 parser:flag("--version","Print version info and exit.")
 parser:mutex(
-	parser:flag("--singledoc","Output as a single document."),
-	parser:flag("--singlefile","Output as a single file."),
-	parser:flag("--multidoc","Output in multiple documents.")
+	parser:flag("--singledoc","Define the documentation directory or documentation file."),
+	parser:flag("--singlefile","Generate a single document from a single file."),
+	parser:flag("--multidoc","Generate one document per source file, and copy the directory hierarchy.")
 )
 parser:flag("--no_subdirectories","Do no create documentation subdirectories.")
 parser:flag("--one_file_per_header","Create a separate documentation file for each header")

@@ -160,9 +160,9 @@ local defaultItems = {
 }
 
 local defaultHeader_markers = {
-    "--***",                    -- 0   C, C++ 
+    "/****",                    -- 0   C, C++ 
     "//!****",                  -- 1   C++, ACM 
-    "/--***",                   -- 2   C++ 
+    "//****",                   -- 2   C++ 
     "(****",                    -- 3   Pascal, Modula-2, B52 
     "{****",                    -- 4   Pascal 
     ";;!****",                  -- 5   Aspen Plus 
@@ -213,9 +213,9 @@ local defaultRemark_markers = {
 }
 
 local defaultEnd_markers = {
-    "--**",                     -- 0  C, C++ 
+    "/***",                     -- 0  C, C++ 
     "//!***",                   -- 1  C++, ACM -- Must check before C++ 
-    "/--**",                    -- 2  C++ 
+    "//***",                    -- 2  C++ 
     " ***",                     -- 3  C, C++, Pascal, Modula-2 
     "{***",                     -- 4  Pascal 
     "(***",                     -- 5  Pascal, Modula-2, B52 
@@ -247,7 +247,7 @@ local defaultHeader_separate_chars = {	-- Delimiter in the names which will sepa
 }
 
 local defaultHeader_ignore_chars = {	-- Any patterns that will be replaced by empty string in the extracted names
-    "%[.-%]",
+    "%[.-%]",	-- Anything surrounded by square brackets is removed
 }
 
 local defaultRemark_begin_markers = {
@@ -510,7 +510,17 @@ function readConfigFile(fileName)
 	return safeenv
 end
 
+-- Function to validate the command line arguments
+local function validateArgs(args)
+	if not args.singledoc and not args.multidoc and not args.singlefile then
+		return nil,"One of the flags: --singledoc, --multidoc or --singlefile is needed on the command line or configuration file."
+	end
+	return true
+end
+
 -- Function to setup the configuration from the given configuration
+-- The function also parses any command line arguments, validates them and includes them in the configuration
+-- The command line configuration parameters take precedence over any similar options defined in the configuration file
 function setupConfig(config)
 	local configuration = {
 		items = defaultItems,
@@ -533,10 +543,13 @@ function setupConfig(config)
 			opts[#opts + 1] = o
 		end
 	end
+	-- Parse all the arguments given in the command line
 	for i = 1,#arg do
 		opts[#opts + 1] = arg[i]
 	end
 	local args = parser:parse(opts)
+	local stat,msg = validateArgs(args)
+	if not stat then return nil,msg end
 	if config and config.items then
 		configuration.items = config.items
 		local stat = tu.inArray(configuration.items,"SOURCE")
@@ -696,7 +709,7 @@ function findActions()
 		"sectionnameonly",
 		"source_line_numbers",
 	}
-	local args = globals.args
+	local args = globals.args	-- Get all command line arguments
 	for i = 1,#flags do
 		if args[flags[i]] then
 			actions["do_"..flags[i]] = true

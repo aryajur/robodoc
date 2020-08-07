@@ -117,4 +117,21 @@ dirIter = function(path,fd,onlyCurrent)
 	setmetatable(obj,objMeta)
 	return obj
 end
+
+-- Function to make sure that the given path exists. 
+-- If not then the full hierarchy is created where required to reach the given path
+function createPath(path)
+	if verifyPath(path) then
+		return true
+	end
+	local p = ""
+	for pth in path:gmatch("(.-)%/") do
+		p = p..pth.."/"
+		if not verifyPath(p) then
+			-- Create this directory
+			lfs.mkdir(p)
+		end
+	end
+	return true
+end
 	
