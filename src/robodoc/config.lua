@@ -515,6 +515,20 @@ local function validateArgs(args)
 	if not args.singledoc and not args.multidoc and not args.singlefile then
 		return nil,"One of the flags: --singledoc, --multidoc or --singlefile is needed on the command line or configuration file."
 	end
+	if args.singledoc or args.singlefile then
+		-- doc option should be a file
+		local stat,msg = globals.fileCreatable(args.doc)
+		if not stat then
+			return nil,msg
+		end
+	end
+	if args.singlefile then
+		-- src option should be a file
+		local stat,msg = globals.fileExists(args.src)
+		if not stat then
+			return nil,msg
+		end
+	end
 	return true
 end
 
@@ -591,17 +605,18 @@ function setupConfig(config)
 			local index = tu.inArray(configuration.headertypes,config.headertypes[i],function(one,two) 
 					return one.typeCharacter == two.typeCharacter 
 				end)
+			-- validate Config should have already checked the existence of the headertype
 			configuration.headertypes[index] = config.headertypes[i]
 		end
 	end
-	configuration.dot_name = args.dotname
+	--configuration.dot_name = args.dotname
 
 	configuration.header_breaks = args.header_breaks==0 and 255 or args.header_breaks
 	
 	-- setup tab_stops
 	local tab_stops = {}
 	local tabsize = args.tabsize or defaultTabSize
-	if args.tabstops then
+	if not args.tabstops then
 		for i = 1,256 do
 			tab_stops[i] = tabsize*i
 		end	
@@ -611,6 +626,8 @@ function setupConfig(config)
 		end
 	end
 	configuration.tab_stops = tab_stops
+	
+	-- Setup masterindex and sourceindex options
 	if args.masterindex then
 		local index = tu.inArray(configuration.headertypes,string.char(2),function(one,two) 
 				return one.typeCharacter == two 

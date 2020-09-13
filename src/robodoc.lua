@@ -18,6 +18,7 @@ local logger = log_console()
 globals.logger = logger
 logger:setLevel("INFO")
 
+local tu = require("tableUtils")
 -- Using argparse module https://github.com/luarocks/argparse
 local ap = require("argparse")
 local parser = ap()	-- Create a parser
@@ -32,8 +33,11 @@ local info = require("robodoc.info")	-- Also sets up command line arguments usin
 local config = require("robodoc.config")
 local docgen = require("robodoc.docgen")
 
--- Import all document exporters here
+logger:info("Run Robodoc version "..info.VERSION.." on "..os.date())
+logger:info(string.rep("-",50))
 
+-- Import all document exporters here they wll setup and fill the docformats array
+globals.html = require("robodoc.outputs.html")
 
 -- Setup the docformat options here
 do
@@ -52,39 +56,20 @@ local args = parser:parse()	-- Parse just to get the rc file to read the configu
 -- # Load and validate the configuration file - done by config.readConfigFile
 -- # Run config.setupConfig to merge all options in the configuration file with the options in the command line arguments and set them up
 --       config.setupConfig returns the final combined arguments
+logger:info("Looking for configuration file "..args.rc)
 local cfg = config.readConfigFile(args.rc)	-- read the configuration file given by the name rc
 do 
 	local msg
 	args,msg = config.setupConfig(cfg)
 	if not args then
-		print("Invalid Arguments: "..msg..". Exiting!")
+		logger:error("Invalid Arguments: "..msg..". Exiting!")
 		os.exit()
 	end
 end
 globals.args = args
 
-if args.debug then
-	logger:setLevel("DEBUG")
-end
-
-if args.license then
-	print(info.license)
-	os.exit()
-end
-
-if args.version then
-	print(info.VERSION)
-	os.exit()
-end
-
-local doctype
 -- Find the doctype
-for i = 1,#docformats do
-	if args[docformats[i].name] then
-		doctype = i
-		break
-	end
-end
+local doctype = tu.inArray(docformats,args,function(one,two) return two[one] end)
 
 local document = {
 	document_title = args.documenttitle,
@@ -94,12 +79,13 @@ local document = {
 	charset = args.charset,
 	extension = args.ext or docformats[doctype].ext,
 	srcextension = args.srcext,
-	css = args.css,
 	section = args.mansection,
 	first_section_level = args.first_section_level,
 	srcroot = args.src,
 	docroot = args.doc
 }
+
+local pcall = pcall
 
 local M = {}
 package.loaded[...] = M
@@ -107,6 +93,16 @@ if setfenv and type(setfenv) == "function" then
 	setfenv(1,M)	-- Lua 5.1
 else
 	_ENV = M		-- Lua 5.2
+end
+
+-- Initialize all the docformats
+for i = 1,#docformats do
+	if globals[docformats[i].name].init then
+		local stat,msg = pcall(globals[docformats[i].name].init,document)
+		if not stat then
+			logger:error("Error running output initialization function for "..docformats[i].name)
+		end
+	end
 end
 
 function generateDocumentation()

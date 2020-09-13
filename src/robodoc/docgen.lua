@@ -5,9 +5,12 @@ local tu = require("tableUtils")
 local globals = require("robodoc.globals")
 local logger = globals.logger
 local config = globals.configuration
-local table = table
 
+local table = table
 local tonumber = tonumber
+local pairs = pairs
+local string = string
+local next = next
 
 local M = {}
 package.loaded[...] = M
@@ -142,6 +145,396 @@ local function findHeaderNames(fDat,start)
 	return names,stp
 end
 
+
+-- Get the items information from the captured header content
+-- If ri is specified then only that remark marker is searched
+local function analyse_items(header,actions,ri)
+	local function checkItem(line)
+		line = line:gsub("^%s*","")
+		-- Now check if there is a remark marker here
+		local found
+		if ri then
+			if line:sub(1,#config.remark_markers[ri]) == config.remark_markers[ri] then
+				found = true
+				line = line:sub(#config.remark_markers[ri]+1,-1)
+			end
+		else
+			for i = 1,#config.remark_markers do
+				if line:sub(1,#config.remark_markers[i]) == config.remark_markers[i] then
+					found = true
+					line = line:sub(#config.remark_markers[i]+1,-1):gsub("%s*$","")
+					ri = i
+					break
+				end				
+			end
+		end		-- if ri then ends
+		if found then
+			-- Look for the Item type
+			found = nil
+			for i = 1,#config.items do
+				if line == config.items[i] then
+					found = i
+					break
+				end
+			end
+			return found
+		end		-- if found then ends	
+	end
+	-- Function to trim the empty lines at the beginning of the item chunk
+	local function trimItemEmptyBeginLines(itemType,lines)
+		if tu.inArray(config.source_items,config.items[itemType]) then
+			-- Skip the next line if it is remark end marker
+			for i = 1,#config.remark_begin_markers do
+				if lines[1]:sub(1,#config.remark_begin_markers[i]) == config.remark_begin_markers[i] then
+					if lines[1]:sub(#config.remark_begin_markers[i]+1,-1):gsub("%s","") ~= "" then
+						logger:warn("In file "..header.part.srcFile.path..header.part.srcFile.file.." in header at line "..header.lineNum.." text follows remark end marker "..config.remark_begin_markers[i])
+					end
+					table.remove(lines,1)
+					break
+				end
+			end
+		end
+		local done,ln
+		while not done do
+			ln = lines[1]:gsub("^%s*","")
+			local found
+			for i = 1,#config.remark_markers do
+				if ln:sub(1,#config.remark_markers[i]) == config.remark_markers[i] and ln:sub(#config.remark_markers[i]+1,-1):gsub("%s","") == "" then
+					found = true
+					break
+				end					
+			end
+			if found then
+				table.remove(lines,1)
+			else
+				done = true
+			end
+		end
+	end
+	-- Function to trim the empty lines in the end of the item chunk
+	local function trimItemEmptyEndLines(itemType,lines)
+		if tu.inArray(config.source_items,config.items[itemType]) then
+			-- Skip the last line if it is a remark begin marker
+			for i = 1,#config.remark_begin_markers do
+				if lines[#lines]:sub(1,#config.remark_begin_markers[i]) == config.remark_begin_markers[i] then
+					if lines[#lines]:sub(#config.remark_begin_markers[i]+1,-1):gsub("%s","") ~= "" then
+						logger:warn("In file "..header.part.srcFile.path..header.part.srcFile.file.." in header at line "..header.lineNum.." text follows remark begin marker "..config.remark_begin_markers[i])
+					end
+					table.remove(lines,#lines)
+					break
+				end
+			end
+		end
+		local done,ln
+		while not done do
+			ln = lines[#lines]:gsub("^%s*","")
+			local found
+			for i = 1,#config.remark_markers do
+				if ln:sub(1,#config.remark_markers[i]) == config.remark_markers[i] and ln:sub(#config.remark_markers[i]+1,-1):gsub("%s","") == "" then
+					found = true
+					break
+				end					
+			end
+			if found then
+				table.remove(lines,#lines)
+			else
+				done = true
+			end
+		end
+	end
+	
+	local function ExpandTab(line)
+		local newLine = {}
+		local actual_tab = 1
+		for i = 1,#line do
+			if line:sub(i,i) == "\t" then
+				while config.tab_stops[actual_tab] <= #newLine do
+					actual_tab = actual_tab + 1
+				end
+				local jump = config.tab_stops[actual_tab] - #newLine
+				if jump <= 0 then
+					jump = 1
+				end
+				for j = 1,jump do
+					table.insert(newLine," ")
+				end
+			else
+				newLine = table.insert(newLine,line:sub(i,i))
+			end
+		end
+		return table.concat(newLine)
+	end
+	
+	local function addItemLines(item,lines)
+		-- Trim the empty lines in the beginning
+		trimItemEmptyBeginLines(item.itemType,lines)
+		trimItemEmptyEndLines(item.itemType,lines)
+		local ln, lnEX, lineKind
+		local sourceItem = tu.inArray(config.source_items,config.items[item.itemType])
+		local itemLines = {}
+		for i = 1,#lines do
+			lnEX = ExpandTab(lines[i])
+			ln = lnEX:gsub("^%s*","")
+			
+			local remarkMarker = tu.inArray(config.remark_markers,ln,function(one,two) return two:sub(1,#one) == one end)
+			if not sourceItem and remarkMarker then
+				ln = lb:sub(#config.remark_markers[remarkMarker] + 1,-1)
+				lineKind = "PLAIN"
+			else
+				ln = lnEX	-- This is a code line so maintain spaces in the beginning
+				lineKind = "RAW"
+			end
+			
+			if (not sourceItem and remarkMarker) or sourceItem then
+				itemLines[#itemLines + 1] = {
+					line = ln,
+					kind = lineKind,
+					line_number = item.start + i,
+					format = {
+						BEGINPRE = nil,
+						BEGINSOURCE = nil,
+						ENDPRE = nil,
+						ENDSOURCE = nil,
+						BEGIN_LIST = nil,
+						BEGIN_LIST_ITEM = nil,
+						END_LIST_ITEM = nil,
+						END_LIST = nil,
+						BEGIN_PRE = nil,
+						END_PRE = nil,
+						BEGIN_PARAGRAPH = nil,
+						END_PARAGRAPH = nil
+					}
+				}
+			end
+		end
+		item.lines = itemLines
+	end
+--[[
+ - FUNCTION
+ -   Try to determine the formatting of an item.
+ -   An empty line generates a new paragraph
+ -   Things that are indented more that the rest of the text
+ -   are preformatted.
+ -   Things that start with a '*' or '-' create list items
+ -   unless they are indented more that the rest of the text.
+]] 
+	local function analyseItemFormat(item)
+		local source = tu.inArray(config.source_items,config.items[item.itemType]) 
+		local function Analyse_Indentation()
+			for i = 1,#item.lines do
+				if item.lines[i].kind == "PLAIN" then
+					if item.lines[i].line:gsub("%s","") ~= "" then
+						return #item.lines[i].line:match("^(%s*)")
+					end
+				end
+			end
+			return 0
+		end
+		-- Analyse List
+		--[[
+			 *   Parse the item text to see if there are any lists.
+			 *   A list is either case I:
+			 *      ITEMNAME
+			 *         o bla bla
+			 *         o bla bla
+			 *   or case II:
+			 *      some text:     <-- begin of a list
+			 *      o bla bla      <-- list item
+			 *        bla bla bla  <-- continuation of list item.
+			 *      o bla bla      <-- list item
+			 *                     <-- end of a list 
+			 *      bla bla        <-- this can also be the end of a list.	
+		]]
+		local function Analyse_List(indent)
+			local function Is_ListItem_Start(line,indent)
+				local curIndent = #line:match("^(%s*)")
+				if curIndent == indent and #line:match("^%s*([%*%-o]%s.+)") >=3 then 
+					-- List item start
+					return true
+				end
+			end
+			local function Analyse_ListBody(startLn,indent)
+				for i = startLn,#item.lines do
+					if item.lines[i].kind == "PLAIN" or i == #item.lines then
+						if Is_ListItem_Start(item.lines[i],indent) then
+							item.lines[i].format.END_LIST_ITEM = true
+							item.lines[i].format.BEGIN_LIST_ITEM = true
+							-- Remove the list character
+							item.lines[i].line = item.lines[i].line:match("^%s*[%*%-o]%s(.+)")
+						elseif #item.lines[i].line:match("^(%s*)") <= indent then	-- Check whther the list item continuation like:
+																				--  *   Is it like the second line in something like:
+																				--		* this is a list item
+																				--		  that continues 
+							-- This is not the continuation of the list item
+							item.lines[i].format.END_LIST_ITEM = true
+							item.lines[i].format.END_LIST = true
+							return i
+						end		-- if Is_ListItem_Start(item.lines[i],indent) then ends
+					end		-- if item.lines[i].kind == "PLAIN" or i == #item.lines then ends
+				end		-- for i = startLn,#item.lines do ends
+				return #item.lines + 1
+			end
+			-- Case I
+			local i = 1
+			if item.lines[i].kind == "PLAIN" and Is_ListItem_Start(item.lines[i],indent) then
+				item.lines[i].format.BEGIN_LIST = true
+				item.lines[i].format.BEGIN_LIST_ITEM = true
+				-- Remove the list character
+				item.lines[i].line = item.lines[i].line:match("^%s*[%*%-o]%s(.+)")					
+				-- Analyse list body
+				i = Analyse_ListBody(i + 1,indent)
+			end
+			-- Case II
+			while i <= #item.lines do
+				if item.lines[i].kind  == "PLAIN" and item.lines[i].line:match("^.+:%s*$") then	-- A list can start with a line ending with :
+					-- go to the next line where the list content starts
+					i = i + 1
+					if i <= #item.lines and item.lines[i].kind == "PLAIN" and Is_ListItem_Start(item.lines[i],indent) then
+						item.lines[i].format.BEGIN_LIST = true
+						item.lines[i].format.BEGIN_LIST_ITEM = true
+						-- Remove the list character
+						item.lines[i].line = item.lines[i].line:match("^%s*[%*%-o]%s(.+)")					
+						-- Analyse list body
+						i = Analyse_ListBody(i+1,indent)
+						--[[ One list might be immediately followed
+						 * by another. In this case we have to
+						 * analyse the last line again. ]]
+						if item.lines[i].kind  == "PLAIN" and item.lines[i].line:match("^.+:%s*$") then
+							i = i - 1
+						end
+						i = i + 1
+					end
+				end
+			end
+		end
+		-- To analyse preformatted text
+		local function Analyse_Preformatted(indent)
+			local inList, ln, newIndent, preformatted
+			for i = 1,#item.lines do
+				ln = item.lines[i].line
+				newIndent = #line:match("^(%s*)")
+				if not inList and item.lines[i].format.BEGIN_LIST then
+					inList = true
+				end
+				if inList and item.lines[i].format.END_LIST then
+					inList = false
+				end
+				if not inList then
+					if newIndent > indent and not preformatted then
+						preformatted = true
+						item.lines[i].format.BEGIN_PRE = true
+					elseif newIndent <= indent and preformatted then
+						preformatted = false
+						item.lines[i].format.END_PRE = true
+					end
+				end
+			end
+		end
+		local function Analyse_Paragraphs()
+			local inPara,inList,inPre,isEmpty,prevIsEmpty,ln
+			if not next(item.lines[1].format) then
+				item.lines[1].format.BEGIN_PARAGRAPH = true
+				inPara = true
+			end
+			for i = 1,#item.lines do
+				ln = item.lines[i].line
+				prevIsEmpty = isEmpty
+				isEmpty = ln:match("^%s*$")
+				if item.lines[i].format.BEGIN_LIST then 
+					inList = true 
+				end
+				if item.lines[i].format.BEGIN_PRE then
+					inPre = true
+				end
+				if item.lines[i].format.END_LIST then
+					inList = false
+				end
+				if item.lines[i].format.END_PRE then
+					inPre = false
+				end
+				if inPara then
+					if item.lines[i].format.BEGIN_LIST or item.lines[i].format.BEGIN_PRE or isEmpty then
+						inPara = false
+						item.lines[i].format.END_PARAGRAPH = true
+					end
+				else
+					if item.lines[i].format.END_LIST or item.lines[i].format.END_PRE or (not isEmpty and prevIsEmpty and not inList and not inPre) then
+						inPara = trye
+						item.lines[i].format.BEGIN_PARAGRAPH = true
+					end
+				end
+			end
+			if inPara then
+				item.lines[#item.lines].format.END_PARAGRAPH = true
+			end
+		end
+		if #item.lines > 0 then
+			if not source and (actions.do_nopre or tu.inArray(config.format_items or {},config.items[item.itemType])) and
+			  not tu.inArray(config.preformatted_items or {},config.items[item.itemtype) then
+				-- Analyse indentation
+				local indent = Analyse_Indentation()
+				Analyse_List(indent)
+				Analyse_Preformatted(indent)
+				Analyse_Paragraphs()
+			else
+				-- Preformat_All
+				local ln
+				ln = item.lines[1]
+				ln.format.BEGINSOURCE = source and true
+				if #item.lines > 1 then
+					ln.format.BEGINPRE = true
+					ln = item.lines[#item.lines]
+					ln.format.ENDPRE = true
+					ln.format.ENDSOURCE = source and true
+				end
+			end
+		end		-- if #item.lines > 0 then ends
+	end		-- local function analyseItemFormat(item) ends
+	
+	header.items = {}
+	--[[
+	-- Item structure defined in the C program
+struct RB_Item
+{
+    struct RB_Item     *next;
+    enum ItemType       type;
+    int                 no_lines;
+    struct RB_Item_Line **lines;
+    int                 begin_index;
+    int                 end_index;
+    int                 max_line_number;
+};	
+	]]
+	local lnCt = 0
+	local start,stp,line = header.data:find("(.-)\n")	-- header.data always ends with \n
+	local lines = {}
+	while line do
+		lnCt = lnCt + 1
+		local itemType = checkItem(line)
+		if itemType then
+			if #header.items > 0 then
+				header.items[#header.items].last = lnCt-1
+				addItemLines(header.items[#header.items],lines)
+				analyseItemFormat(header.items[#header.items])
+			end
+			header.items[#header.items + 1] = {
+				itemType = itemType,
+				start = lnCt,
+			}
+			lines = {}
+		else
+			lines[#lines + 1] = line
+		end
+		start,stp,line = header.data:find("(.-)\n",stp+1)
+	end		-- for line in header.data:gmatch("(.-)\n") do ends
+	if #header.items > 0 then
+		header.items[#header.items].last = lnCt-1
+		addItemLines(header.items[#header.items],lines)
+		analyseItemFormat(header.items[#header.items])
+	end
+	return ri
+end
+
 --[[****f* docgen/createDocParts
  * FUNCTION
  *   Create all the parts of a document based on the sourcefiles in
@@ -168,6 +561,8 @@ local function createDocParts(document)
 	--		struct RB_header   *last_header;
 		};
 	]]
+	-- Also store all the headers in the document
+	document.headers = {}
 	document.parts = parts
 	for i = 1,#dir do
 		local headers = {}	-- Data structure to store all header information
@@ -187,8 +582,8 @@ local function createDocParts(document)
 				char               *version;
 		--		char               *function_name;
 		--		char               *module_name;
-				char               *unique_name;
-				char               *file_name;
+		--		char               *unique_name;
+		--		char               *file_name;
 				struct RB_header_lines *lines;
 				int                 no_lines;
 		--		int                 line_number;
@@ -196,7 +591,8 @@ local function createDocParts(document)
 		]]
 		parts[#parts + 1] = {
 			srcfile = dir[i],
-			headers = headers
+			headers = headers,
+			docfile = nil
 		}
 		logger:debug("Analysing "..dir[i].path..dir[i].file)
 		local f,msg = io.open(dir[i].path..dir[i].file)
@@ -206,7 +602,7 @@ local function createDocParts(document)
 			-- Collect all the headers
 			local strt,stp,index,lineNum = findHeader(fDat,1)	-- hi is the header index in config.header_markers
 			local hi = actions.do_lockheader and index
-			local ei
+			local ei,ri		-- ei - end marker index found, ri - remark marker index found
 			while strt do
 				-- Header found
 				local internal = fDat:sub(stp+1)=="i"
@@ -229,7 +625,10 @@ local function createDocParts(document)
 								line_number = lineNum,
 								start = strt,
 								names = names,
-								part = parts[#parts]
+								part = parts[#parts],
+								file_name = nil,
+								unique_name = nil,
+								items = nil
 							}
 							-- Check if there is a duplicate header
 							for j = 1,#parts do
@@ -269,6 +668,8 @@ local function createDocParts(document)
 							else
 								logger:debug("Found header end at line "..lineNum)
 								headers[#headers].data = fDat:sub(headers[#headers].start,stp).."\n"
+								local RI = analyse_items(headers[#headers],actions,ri)
+								ri = actions.do_lockheader and (not ri and RI or ri)
 							end
 						end		-- if not names[1] then ends
 					end		-- if not stp then ends -- for finding a space after the header marker
@@ -280,6 +681,10 @@ local function createDocParts(document)
 		else
 			logger:debug("Could not open file "..dir[i].path..dir[i].file..": "..msg)
 		end		-- if f then ends (f contains the handle for the file being analyzed)
+		-- Add all the collected headers to document.headers
+		for j = 1,#headers do
+			document.headers[#document.headers + 1] = headers[j]
+		end
 	end		-- for i = 1,#dir do ends
 end
 
@@ -297,9 +702,13 @@ local function getDocFileList(document)
 	local srcroot = document.srcroot
 	local docroot = document.docroot
 	local parts = document.parts	-- Contains the path and file names of all the soruce files
+	local ext = document.extension
+	if ext:sub(1,1) ~= "." then
+		ext = "."..ext
+	end
 	for i = 1,#parts do
 		local sFile = parts[i].srcfile
-		local dFile = {file = sFile.file}
+		local dFile = {file = sFile.file:gsub("%..-$","")..ext}
 		if document.actions.do_no_subdirectories then
 			-- documentation files should all be in 1 directory
 			dFile.path = docroot
@@ -321,15 +730,160 @@ local function createDocFilePaths(document)
 	-- Sort the file list according to the path so that hierarchy is created from the top most path first
 	table.sort(docfiles,function(one,two) return one.path < two.path end)
 	-- Now create the paths
+	local stat,msg 
 	for i = 1,#docfiles do
-		globals.createPath(docfiles[i].path)
+		stat,msg = globals.createPath(docfiles[i].path)
+		if not stat then
+			logger:error("Cannot create directory: "..docfiles[i].path)
+			return nil,msg
+		end
 	end
+	return true
+end
+
+-- Function to split the parts so that one part only has 1 header
+local function splitParts(document)
+	local parts = document.parts
+	local sparts = {}
+	local function fillPartKeys(p,sp)
+		for k,v in pairs(p) do
+			if k ~= "headers" then
+				sp[k] = v
+			end
+		end
+	end
+	for i = 1,#parts do
+		for j = 1,#parts[i].headers do
+			sparts[#sparts + 1] = {}
+			fillPartKeys(parts[i],sparts[#sparts])
+			sparts[#sparts].headers = {parts[i].headers[j]}
+			sparts[#sparts].headers[1].part = sparts[#sparts]
+		end
+	end		-- for i ends here
+	document.parts = sparts
+	return true
+end
+
+-- Sanitize a name by making sure all characters are either alphanumeric or hex codes if any other encoding characters are present
+local function sanitizeName(name)
+	local newName = ""
+	for i = 1,#name do
+		local c = name:sub(i,i)
+		if c:byte() < 128 and c:match("%w") then
+			newName = newName..c
+		else
+			newName = newName..string.format("%2X",c:byte())
+		end
+	end
+	return newName
+end
+
+-- Function to interlink the headers
+-- Every header table gets a parent entry and a array of children
+local function interlinkHeaders(headers)
+	for i = 1,#headers do
+		local name = headers[i].names[1]
+		headers[i].children = headers[i].children or {}
+		for j = 1,#headers do
+			if j ~= i then
+				if headers[j].module_name == name then
+					headers[j].parent = headers[i]
+					headers[i].children[#headers[i].children + 1] = headers[j]
+				end
+			end
+		end		-- for j = 1,#headers do ends
+	end		-- for i = 1,#headers do ends
 end
 
 -- Function to generate the documentation from the info available in the document structure and config structure
-local function genDocumentation(document)
-	
-	
+-- RB_Generate_MultiDoc function from C file
+local function genMultiDoc(document)
+	local stat,msg
+	-- Get the list of document path and names that need to be created
+	getDocFileList(document)
+	-- Create all the document paths
+	stat,msg = createDocFilePaths(document)
+	if not stat then
+		return nil,msg
+	end
+	if document.actions.do_one_file_per_header then
+		logger:info("Generating file names for storing each header in a separate file.")
+		splitParts(document)
+		-- Add the header name to the docfile name
+		local parts = document.parts
+		for i = 1,#parts do
+			local name,ext = parts[i].docfile.file:match("^(.+)(%..-)$")
+			parts[i].docfile.file = name..sanitizeName(parts[i].headers[1].names[1])..ext
+		end
+	end
+	if not document.actions.do_nosort then
+		local function compareHeaders(one,two)
+			if config.headertypes[one.htype].priority > config.headertypes[two.htype].priority then
+				return true
+			end
+			if config.headertypes[one.htype].priority < config.headertypes[two.htype].priority then
+				return false
+			end
+			-- priorities are equal
+			if document.actions.do_sectionnameonly then
+				-- Do not include parent name in sorting it they are not displayed
+				return one.function_name < two.function_name
+			else
+				return one.names[1] < two.names[1]
+			end
+		end
+		-- Sort the headers
+		local parts = document.parts
+		for i = 1,#parts do
+			table.sort(parts[i].headers,compareHeaders)
+		end
+		-- Sort all the headers in the document.headers table as well
+		table.sort(document.headers,compareHeaders)
+	end
+	-- Interlink the headers by creating parent child relationships
+	interlinkHeaders(document.headers)
+	-- Create structure for links
+	document.links = {}
+	-- Populate the filename where each header is stored
+	for i = 1,#document.headers do
+		if document.actions.do_singledoc or document.actions.do_singlefile then
+			document.headers[i].file_name = document.srcroot
+		else
+			document.headers[i].file_name = document.headers[i].part.docfile.path..document.headers[i].part.docfile.file
+		end
+		-- Give each header a unique name
+		document.headers[i].unique_name = "robo"..string.format("%07u",i)
+		-- Sort the items in the header
+		table.sort(document.headers[i].items,function(one,two)
+				return one.itemType and two.itemType and one.itemType < two.itemType
+			end)
+		for j = 1,#document.headers[i].names do
+			local name = document.headers[i].names[j]
+			document.links[#document.links + 1] = {
+				htype = docment.headers[i].htype,
+				internal = document.headers[i].internal,
+				file_name = document.headers[i].file_name,
+				object_name = name:find("%/") and name:match("%/(.-)$") or name,
+				label_name = document.headers[i].unique_name
+			}
+		end
+	end
+	-- Add links for all the source files only if not do one file per header
+	if not document.actions.do_one_file_per_header then
+		for i = 1,#document.parts do
+			document.links[#document.links + 1] = {
+				label_name = "robo_top_of doc",
+				object_name = document.parts[i].srcfile.file,
+				file_name = document.parts[i].srcfile.path..document.parts[i].srcfile.file,
+				htype = tu.inArray(config.headertypes,string.char(1),function(one,two) return one.typeCharacter == two end)
+			}
+			document.parts[i].link = document.links[#document.links]
+		end
+	end
+	-- Sort all the links
+	table.sort(document.links,function(one,two) return one.object_name < two.object_name end)
+
+	return true
 end
 
 function docgen(document)
@@ -342,7 +896,7 @@ function docgen(document)
 			return
 		end
 		createDocParts(document)
-		
+		genMultiDoc(document)
 	elseif document.actions.do_singledoc then
 		
 	elseif document.actions.do_singlefile then

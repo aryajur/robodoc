@@ -13,9 +13,9 @@ else
 	_ENV = M		-- Lua 5.2
 end
 
-function sanitizePath(path)
+function sanitizePath(path,file)
 	path = path:gsub([[\]],[[/]]):gsub("^%s*",""):gsub("%s*$","")
-	if path:sub(-1,-1) ~= "/" and path ~= "" then
+	if not file and path:sub(-1,-1) ~= "/" and path ~= "" then
 		path = path.."/"
 	end
 	return path
@@ -32,6 +32,28 @@ function verifyPath(path)
 		return false,"Path does not exist"
 	end
 	d:close()
+	return true
+end
+
+function fileExists(file)
+	local f,msg = io.open(file,"r")
+	if not f then
+		return nil,msg
+	end
+	f:close()
+	return file
+end
+
+function fileCreatable(file)
+	if fileExists(file) then
+		return nil,"File already exists"
+	end
+	local f,msg = io.open(file,"w+")
+	if not f then
+		return nil,msg
+	end
+	f:close()
+	os.remove(file)
 	return true
 end
 
@@ -125,11 +147,15 @@ function createPath(path)
 		return true
 	end
 	local p = ""
+	local stat,msg
 	for pth in path:gmatch("(.-)%/") do
 		p = p..pth.."/"
 		if not verifyPath(p) then
 			-- Create this directory
-			lfs.mkdir(p)
+			stat,msg = lfs.mkdir(p)
+			if not stat then
+				return nil,msg
+			end
 		end
 	end
 	return true
