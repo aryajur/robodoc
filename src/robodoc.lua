@@ -92,7 +92,7 @@ package.loaded[...] = M
 if setfenv and type(setfenv) == "function" then
 	setfenv(1,M)	-- Lua 5.1
 else
-	_ENV = M		-- Lua 5.2
+	_ENV = M		-- Lua 5.2+
 end
 
 -- Initialize all the docformats
