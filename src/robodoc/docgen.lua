@@ -5,6 +5,7 @@ local tu = require("tableUtils")
 local globals = require("robodoc.globals")
 local logger = globals.logger
 local config = globals.configuration
+local html = require("robodoc.outputs.html")
 
 local table = table
 local tonumber = tonumber
@@ -799,6 +800,7 @@ end
 -- RB_Generate_MultiDoc function from C file
 local function genMultiDoc(document)
 	local stat,msg
+	local document_file
 	-- Get the list of document path and names that need to be created
 	getDocFileList(document)
 	-- Create all the document paths
@@ -882,6 +884,43 @@ local function genMultiDoc(document)
 	end
 	-- Sort all the links
 	table.sort(document.links,function(one,two) return one.object_name < two.object_name end)
+
+
+	if(document.Option == "html") then
+		html.createCSS(document)
+	end
+	
+	local output_mod = document.output.mod
+	for i=1, #document.parts do
+		local filename = getFullName(document.parts[i].filename)
+		local docname = getFullDocname(document.parts[i].filename)
+		--check total numbers of header is not zero
+		if output_mod != TROFF then
+			document_file = OpenDocumentation(document.parts[i])
+			generateDocStart(document,document_file,srcname,srcname,1,docname,document.charset)
+			generateBeginNavigation(document_file)
+			if(document.actions.do_one_file_per_header) then
+				generateNavBarOneFilePerHeader(document,document_file,document.parts[i].headers)
+			else
+				generateIndex(document_file,docname,document)
+			end
+			generateEndNavigation(document_file)
+			generateBeginNavigation(document_file)
+			if((document.actions.do_toc) and (document.no_headers)) then
+				generateTOC2(document_file,document.headers,document.no_headers,document.parts[i],docname)
+			end
+			generatePart(document_file,document,document.parts[i])
+			generateEndContent(document_file)
+			generateDocEnd(document_file,docname,srcname)
+			document_file:close()
+		else
+			generatePart(document_file,document,i)
+		end
+
+	end
+	if(document.actions.do_index) then
+		generateIndex(document)
+	end
 
 	return true
 end
