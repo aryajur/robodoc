@@ -1,5 +1,17 @@
 -- HTML Generation module as done in original Robodoc
 
+--[[***h* ROBODoc/HTML_Generator
+ * FUNCTION
+ *   The generator for HTML output.
+ *
+ *   The generator supports sections upto 7 levels deep.  It supports
+ *   a Table of Contents based on all headers.  A masterindex for
+ *   all headertypes and seperate masterindexes for each headertype.
+ *
+ * MODIFICATION HISTORY
+ *  
+ *   
+ ]]
 
 local globals = require("robodoc.globals")
 local docformats = globals.docformats
@@ -30,6 +42,59 @@ end
 
 
 
+ --[[***v* Globals/course_of_action [2.0]
+ * NAME
+ *   course_of_action
+ * FUNCTION
+ *   Global Variable that defines the course of action.
+ * SOURCE
+ ]]
+ course_of_action = nil
+
+ 
+function TOCIndexFilename(document)
+	toc_index_name = "toc_index.html"
+	toc_index_path = document.docroot.name
+	toc_index_path = toc_index_path..toc_index_name
+	return toc_index_name
+end
+
+
+function GenerateSourceTreeEntry(dest_doc, dest_name, parent_path, srctree, document )
+	local cur_path
+	local cur_filename
+	dest_doc:write("<ul>\n")
+	cur_filename = srctree
+	for i=0,#srctree do
+		if(cur_filename[i].path == parent_path) then
+			if(cur_filename.link)
+		end
+	end
+	----------- to do -------------
+end
+
+function GenerateSourceTree(dest_doc, dest_name, document)
+	GenerateSourceTreeEntry(dest_doc, dest_name,nil, srctree, document)
+end
+
+
+--[[***if* HTML_Generator/RB_HTML_Generate_False_Link
+ * FUNCTION
+ *   Create a representation for a link that links an word in
+ *   a header to the header itself.
+ * SYNOPSIS
+]]
+function Generate_False_Link(dest_doc, name )
+--[[
+ * INPUTS
+ *   * dest_doc -- the file the representation is written to.
+ *   * name     -- the word.
+ * SOURCE
+]]
+	dest_doc:write("<strong>")
+	GenerateString( dest_doc, name );
+	dest_doc:write("</strong>")
+end
 
 --[[***f* HTML_Generator/RB_Create_CSS
  * FUNCTION
@@ -42,16 +107,6 @@ end
  *   to the name of the documentation file.
  * SYNOPSIS
  ]]
-
- --[[***v* Globals/course_of_action [2.0]
- * NAME
- *   course_of_action
- * FUNCTION
- *   Global Variable that defines the course of action.
- * SOURCE
- ]]
-course_of_action = nil
-
 function createCSS(document)
 --[[
  * INPUTS
@@ -537,7 +592,7 @@ end
  *   RB_HTML_Color_string -- generate vairous colored string.
  * SYNOPSIS
  ]]
- function colorString(open,class,a_string)
+ function colorString( open, class, a_string)
 	--[[
 	 * FUNCTION
 	 * 
@@ -790,4 +845,11 @@ function generateItemLineNumber(lineNumberString)
  ]]
 	colorString(2,LINE_NUMBER_CLASS,lineNumberString)
 end
+
+
+--- todo ---
+function GenerateNavBarOneFilePerHeader(document, current_doc, current_header )
+
+end
+
 

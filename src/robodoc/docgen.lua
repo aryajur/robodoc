@@ -6,6 +6,7 @@ local globals = require("robodoc.globals")
 local logger = globals.logger
 local config = globals.configuration
 local html = require("robodoc.outputs.html")
+local generator = require("generator")
 
 local table = table
 local tonumber = tonumber
@@ -21,6 +22,11 @@ else
 	_ENV = M		-- Lua 5.2
 end
 
+
+--[[
+	* getLenExtention(extention)
+	
+]]
 local sourceExt
 
 --[[****f* docgen/isSourceFile
@@ -796,6 +802,11 @@ local function interlinkHeaders(headers)
 	end		-- for i = 1,#headers do ends
 end
 
+local function OpenDocumentation(part)
+
+end
+
+
 -- Function to generate the documentation from the info available in the document structure and config structure
 -- RB_Generate_MultiDoc function from C file
 local function genMultiDoc(document)
@@ -890,39 +901,45 @@ local function genMultiDoc(document)
 		html.createCSS(document)
 	end
 	
-	local output_mod = document.output.mod
+	local output_mod = globals.output_mod or "HTML" -- todo have to edit this
 	for i=1, #document.parts do
-		local filename = getFullName(document.parts[i].filename)
-		local docname = getFullDocname(document.parts[i].filename)
+		local filename = document.parts[i].srcfile.file
+		local docname = document.parts[i].srcfile.path..document.parts[i].srcfile.file
 		--check total numbers of header is not zero
-		if output_mod != TROFF then
-			document_file = OpenDocumentation(document.parts[i])
-			generateDocStart(document,document_file,srcname,srcname,1,docname,document.charset)
-			generateBeginNavigation(document_file)
+		if output_mod != "TROFF" then
+
+			document_file,msg = io.Open(document.parts[i].srcfile.file)
+			if not document_file then
+				logger:error("Cannot open file"..document.parts[i].srcfile.file)
+			end
+			
+			generator.GenerateDocStart(document, document_file, srcname, srcname, 1, docname, document.charset)
+			generator.GenerateBeginNavigation(document_file)
+
 			if(document.actions.do_one_file_per_header) then
-				generateNavBarOneFilePerHeader(document,document_file,document.parts[i].headers)
+				html.GenerateNavBarOneFilePerHeader(document,document_file,document.parts[i].headers)
 			else
-				generateIndex(document_file,docname,document)
+				generator.GenerateIndexMenu(document_file,docname,document)
 			end
-			generateEndNavigation(document_file)
-			generateBeginNavigation(document_file)
+			generator.GenerateEndNavigation(document_file)
+			generator.GenerateBeginContent(document_file)
 			if((document.actions.do_toc) and (document.no_headers)) then
-				generateTOC2(document_file,document.headers,document.no_headers,document.parts[i],docname)
+				generator.GenerateTOC2(document_file,document.headers,document.no_headers,document.parts[i],docname)
 			end
-			generatePart(document_file,document,document.parts[i])
-			generateEndContent(document_file)
-			generateDocEnd(document_file,docname,srcname)
+			GeneratePart(document_file,document,document.parts[i])
+			generator.GenerateEndContent(document_file)
+			GenerateDocEnd(document_file,docname,srcname)
 			document_file:close()
 		else
-			generatePart(document_file,document,i)
+			--GeneratePart(document_file, document, i)
 		end
 
 	end
 	if(document.actions.do_index) then
-		generateIndex(document)
+		generator.GenerateIndex(document)
 	end
 
-	return true
+	FreeLinks()
 end
 
 function docgen(document)
@@ -942,3 +959,4 @@ function docgen(document)
 		
 	end
 end
+
