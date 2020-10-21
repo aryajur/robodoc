@@ -67,10 +67,30 @@ function GenerateSourceTreeEntry(dest_doc, dest_name, parent_path, srctree, docu
 	cur_filename = srctree
 	for i=0,#srctree do
 		if(cur_filename[i].path == parent_path) then
-			if(cur_filename.link)
+			if(cur_filename.link) then
+				if(document.actions.do_one_file_per_header) then
+					dest_doc:write("<li><tt>\n" )
+					GenerateString(dest_doc, cur_filename.name)
+					dest_doc:write("</tt></li>\n")
+				else
+					r = RelativeAddress(dest_name, cur_filename.link.file_name)
+					dest_doc:write("<li>\n")
+					dest_doc:write("<a href=\""..r.."#"..cur_filename.link.label_name.."\"><tt>\n")
+					GenerateString(dest_doc, cur_filename.name)
+					dest_doc:write("</tt></a></li>\n")
+				end
+			end
 		end
 	end
-	----------- to do -------------
+	for cur_path = 0, #srctree do
+		if(srctree[cur_path] == parent_path) then
+			dest_doc:write("<li>\n")
+			GenerateString(dest_doc, cur_path.name)
+			GenerateSourceTreeEntry(dest_doc, dest_name, cur_path, srctree, document)
+			dest_doc:write("</li>\n")
+		end	
+	end
+	dest_doc:write("</ul>\n")
 end
 
 function GenerateSourceTree(dest_doc, dest_name, document)
@@ -117,7 +137,7 @@ function createCSS(document)
 
 	if(document.action.do_multidoc) then
 		cssfile = string.copy(document.docroot)
-		cssfile = cssfile + "robodoc.css"
+		cssfile = cssfile.."robodoc.css"
 	end
 
 	if(document.css) then
@@ -135,7 +155,7 @@ function createCSS(document)
 			CssfileVar:write("/****h* ROBODoc/ROBODoc Cascading Style Sheet\n"
 			" * FUNCTION\n"
 			" *   This is the default cascading style sheet for documentation\n"
-			" *   generated with ROBODoc.\n"
+			" *   Generated with ROBODoc.\n"
 			" *   You can edit this file to your own liking and then use\n"
 			" *   it with the option\n"
 			" *      --css <filename>\n"
@@ -155,7 +175,7 @@ function createCSS(document)
 			" *      +----------------------------------------+\n"
 			" *\n"
 			" *   This style-sheet is based on a style-sheet that was automatically\n"
-			" *   generated with the Strange Banana stylesheet generator.\n"
+			" *   Generated with the Strange Banana stylesheet generator.\n"
 			" *   See http://www.strangebanana.com/generator.aspx\n"
 			" *\n"
 			" ******\n"
@@ -453,12 +473,12 @@ end
  *   * The end of a document
  * SYNOPSIS
  ]]
-function htmlGenerateDocStart(dest_doc, src_name, name, dest_name, charset)
+function GenerateDocStart(dest_doc, src_name, name, dest_name, charset)
 --[[
  * INPUTS
  *   o dest_doc  --  the output file.
  *   o src_name  --  The file or directoryname from which 
- *                   this document is generated.
+ *                   this document is Generated.
  *   o name      --  The title for this document
  *   o dest_name --  the name of the output file.
  *   o charset   --  the charset to be used for the file.
@@ -475,13 +495,34 @@ function htmlGenerateDocStart(dest_doc, src_name, name, dest_name, charset)
 		dest_doc:write("<head>\n")
 		dest_doc:write("<meta http-equiv=\"Content-Style-Type\" content=\"text/css\" />\n")
 		dest_doc:write("<meta http-equiv=\"Content-type\" content=\"text/html; charset=%s\" />\n")
+		InsertCSS(dest_doc,dest_name)
+		dest_doc:write("<title>"..name.."</title>\n")
+		dest_doc:write("<!-- Source: "..src_name.." -->\n")
+
+		if (course_of_action.do_nogenwith) then
+		else
+			-- copyright comment
+		end
+		dest_doc:write("</head>\n")
+		dest_doc:write("<body>\n")
 
 	end
+	GenerateDiv(dest_doc, "logo")
+	dest_doc:write("<a name=\"robo_top_of_doc\">")
+	if(document_title) then
+		GenerateString(dest_doc, document_title)
+	end
+	dest_doc:write("</a>\n")
+	GenerateDivEnd(dest_doc, "logo")
 
 end
 
-function RBInsertCSS(dest_doc,filename)
-	if()
+function InsertCSS(dest_doc,filename)
+	if(css_name) then
+		if(filename) then
+			dest_doc:write("<link rel=\"stylesheet\" href=\""..filename.."\" type=\"text/css\" />\n")
+		end
+	end
 end
 
 function strcmp(a,b) return a==b end
@@ -495,7 +536,7 @@ local LINE_NUMBER_CLASS = "line_number"
  * SYNOPSIS
  ]]
 
-function generateDiv(id)
+function GenerateDiv(dest_doc, id)
 --[[
  * INPUTS
  *   o id -- id Attribute of the div
@@ -503,7 +544,7 @@ function generateDiv(id)
  *   RB_HTML_Generate_DivEnd()
  * SOURCE
  ]]
-	str = str.."<div id=\""..id.."\">\n"
+	dest_doc:write("<div id=\""..id.."\">\n")
 end
 
 
@@ -513,7 +554,7 @@ end
  * SYNOPSIS
  ]]
 
- function generateDivEnd(id)
+ function GenerateDivEnd(dest_doc, id)
 --[[
  * INPUTS
  *   o id -- id Attirbute of the div
@@ -521,7 +562,7 @@ end
  *   RB_HTML_Generate_DivEnd()
  * SOURCE
  ]]
-	str = str.."</div><!----"..id.."--->\n"
+	dest_doc:write("</div><!----"..id.."--->\n")
 end
 
 
@@ -531,7 +572,7 @@ end
  *   characters where necessary.
  * SYNOPSIS
  ]]
-function generateString(a_string)
+function GenerateString(dest_doc, a_string)
 --[[
  * INPUTS
  *   o a_string -- a nul terminated string.
@@ -542,17 +583,17 @@ function generateString(a_string)
     l = #a_string
     for i=0,#a_string do
         c = a_string[i];
-        GenerateChar(c);
+        GenerateChar(dest_doc, c);
 	end
 end
 
 
 --[[***f* HTML_Generator/RB_HTML_Generate_Char
  * NAME
- *   RB_HTML_Generate_Char -- generate a single character for an item.
+ *   RB_HTML_Generate_Char -- Generate a single character for an item.
  * SYNOPSIS
  ]]
-function generateChar(c)
+function GenerateChar(dest_doc, c)
 --[[
  * FUNCTION
  *   This function is called for every character that goes
@@ -562,68 +603,91 @@ function generateChar(c)
  ]]
 
  	local switch = { 
-    	['\n'] = function()	-- for case '\n'
-        	str = str..""
+		['\n'] = function()	-- for case '\n'
+			dest_doc:write("")
     	end,
     	['\t'] = function()	-- for case '\t'
-        	str = str..""
+        	dest_doc:write("")
     	end,
-    	['<'] = function()	-- for case '<'
-        	str = str.."&lt"
+		['<'] = function()	-- for case '<'
+			dest_doc:write("&lt")
 		end,
 		['>'] = function()  -- for case '<'
-			str = str.."&gt"
+			dest_doc:write("&gt")
 		end,
 		['&'] = function()  -- for case '&'
-			str = str.."&amp"
+			dest_doc:write("&amp")
 		end
 	}
 	
 	local f = switch[c]
 	if (f) then
 		f()
-	else                   --for default
-		str = str..c 
+	else    
+		dest_doc:write(c)               --for default
 	end
+end
+
+--[[***if* HTML_Generator/RB_HTML_Generate_False_Link
+ * FUNCTION
+ *   Create a representation for a link that links an word in
+ *   a header to the header itself.
+ * SYNOPSIS
+ ]]
+function GenerateFalseLink(dest_doc, name )
+--[[
+ * INPUTS
+ *   * dest_doc -- the file the representation is written to.
+ *   * name     -- the word.
+ * SOURCE
+]]
+	dest_doc:write("<strong>")
+	GenerateString(dest_doc, name)
+	dest_doc:write("</strong>")
 end
 
 --[[***f* HTML_Generator/RB_HTML_Generate_Color_String
  * NAME
- *   RB_HTML_Color_string -- generate vairous colored string.
+ *   RB_HTML_Color_string -- Generate vairous colored string.
  * SYNOPSIS
  ]]
- function colorString( open, class, a_string)
+ function colorString( dest_doc, open, class, a_string)
 	--[[
 	 * FUNCTION
 	 * 
 	 * SOURCE
 	 ]]
 	if(open==0) then  -- string,closing
-		generateString(a_string)
-		str=str+"</span>"
+		GenerateString(dest_doc, a_string)
+		dest_doc:write("</span>")
 	elseif(open==1) then   --opening, string
-		str=str+"<span class=\"" + class + "\""
-		generateString(a_string)
+		dest_doc:write("<span class=\""..class.."\"")
+		GenerateString(dest_doc, a_string)
 	elseif(open==2) then	--opening, string, closing
-		str=str+"<span class=\"" + class + "\""
-		generateString(a_string)
-		str=str+"</span>"
+		dest_doc:write("<span class=\""..class.."\"")
+		GenerateString(dest_doc, a_string)
+		dest_doc:write("</span>")
+		-----------------------------------------TODO ------------
+	elseif(open==3) then    -- opening, char, closing
+		dest_doc:write("<span class=\""..class.."\">")
+		GenerateString(dest_doc, a_string)  -------todo--review -----
+		dest_doc:write("</span>")
 	end		 
 end
 
 --[[****f* HTML_Generator/RB_HTML_Generate_Line_Comment_End
  * FUNCTION
- *   Check if a line comment is active and generate ending sequence for it.
+ *   Check if a line comment is active and Generate ending sequence for it.
  *   Should be called at the end of each SOURCE line.
  * SYNOPSIS
  ]]
-function generateLineCommentEnd()
+function GenerateLineCommentEnd(dest_doc)
 
     -- Check if we are in a line comment
     if ( in_linecomment == 1) then
         -- and end the line comment
         in_linecomment = 0
-        colorString(in_linecomment, COMMENT_CLASS, "" );
+        colorString(dest_doc, in_linecomment, COMMENT_CLASS, "" );
 	end
 end
 
@@ -635,7 +699,7 @@ end
  *   Generates alphabetic shortcuts to index entries.
  * SYNOPSIS
  ]]
-function generateIndexShortcuts()
+function GenerateIndexShortcuts(dest_doc)
 	--[[
  * INPUTS
  *   o dest        -- the file to write to
@@ -646,28 +710,27 @@ function generateIndexShortcuts()
  * SOURCE
  ]]
 	local c
-	str = str + "<h2>"
+	dest_doc:write("<h2>")
 
 	for c = 97,122 do
-		str = str + "<a href=\"#"+("").char(c)+"\">"
-		generateChar(c)
-		str = str + "</a> - "
+		dest_doc:write("<a href=\"#"..("").char(c).."\">")
+		GenerateChar(dest_doc, c)
+		dest_doc:write("</a> - ")
 	end
 
 	for c = 0, 9 do
-		str = str + "<a href=\"#"+("").char(c)+"\">"
-		generateChar(""..c)
-		str = str + "</a>"
+		dest_doc:write("<a href=\"#"..("").char(c).."\">")
+		GenerateChar(dest_doc, ""..c)
+		dest_doc:write("</a>")
 		if (c != 9)
-			str = str + " - "
+			dest_doc:write(" - ")
 		end
 	end
-
-	str = str + "</h2>\n"
+	dest_doc:write("</h2>\n")
 end
 
-function generateEmptyItem()
-	str = str + "<br>\n"
+function GenerateEmptyItem(dest_doc)
+	dest_doc:write("<br>\n")
 end
 
 --[[***f* HTML_Generator/RB_HTML_Generate_Link
@@ -675,7 +738,7 @@ end
  *   RB_HTML_Generate_Link --
  * SYNOPSIS
  ]]
-function generateLink(cur_name,filename,labelname,linkname,classname)
+function GenerateLink(dest_doc, cur_name,filename,labelname,linkname,classname)
 --[[
  * INPUTS
  *   cur_doc  --  the file to which the text is written
@@ -688,19 +751,19 @@ function generateLink(cur_name,filename,labelname,linkname,classname)
  * SOURCE
  ]]
 	if(classname) then
-		str = str + "<a class=\""+classname + "\""
+		dest_doc:write("<a class=\""..classname.."\"")
 	else
-		str = str + "<a "
+		dest_doc:write("<a ")
 	end
 	if( filename and strcmp(filename,cur_name)) then
 		local varRelativeAddress = relativeAddress(cur_name,filename)
-		str = str + "href=\"" + varRelativeAddress + "#" + labelname + "\">"
-		generateString(linkname)
-		str = str + "</a>"
+		dest_doc:write("href=\""..varRelativeAddress.."#"..labelname.."\">")
+		GenerateString(cur_doc, linkname)
+		dest_doc:write("</a>")
 	else
-		str = str + "href=\"#" +labelname + "\">" 
-		generateString(linkname)
-		str = str + "</a>"
+		dest_doc:write("href=\"#"..labelname.."\">") 
+		GenerateString(cur_doc, linkname)
+		dest_doc:write("</a>")
 	end
 end
 
@@ -751,84 +814,84 @@ function relativeAddress(thisname,thatname)
 end
 
 
-function generateBeginContent()
+function GenerateBeginContent(dest_doc)
 
-    generateDiv( "content" )
+    GenerateDiv( dest_doc, "content" )
 end
 
-function generateEndContent()
+function GenerateEndContent(dest_doc)
 
-    generateDivEnd("content" )
+    GenerateDivEnd(dest_doc, "content" )
 end
 
-function generateBeginNavigation()
+function GenerateBeginNavigation(dest_doc)
 
-    generateDiv( "navigation" )
+    GenerateDiv( dest_doc, "navigation" )
 end
 
-void generateEndNavigation()
-	generateDivEnd("navigation" )
+function GenerateEndNavigation(dest_doc)
+	GenerateDivEnd(dest_doc, "navigation" )
 end
 
-function generateBeginExtra()
-	generateDiv("extra" );
+function GenerateBeginExtra(dest_doc)
+	GenerateDiv(dest_doc, "extra" );
 end
 
-function generateEndExtra()
-	generateDivEnd("extra")
+function GenerateEndExtra(dest_doc)
+	GenerateDivEnd( dest_doc, "extra")
 end
 
 
-function generateItemName(name)
-	str=str+"<p class=\"item_name\">"
-	generateString(name)
-	str=str+"</p>"
+function GenerateItemName(dest_doc, name)
+	dest_doc:write("<p class=\"item_name\">")
+	GenerateString(dest_doc, name)
+	dest_doc:write("</p>")
 end
 
-function insertCSS(filename) 
+function insertCSS(dest_doc, filename) 
 	if(css_name) then
 		varRelativeAddress = relativeAddress(filename,css_name)
 		assert(varRelativeAddress)
 		assert(strlen(varRelativeAddress))
-		str = str + "<link rel=\"stylesheet\" href=\""+varRelativeAddress+"\" type=\"text/css\" />\n"
+		dest_doc:write("<link rel=\"stylesheet\" href=\""..varRelativeAddress.."\" type=\"text/css\" />\n")
 	end
 end
 
 
-function generateBeginParagraph()
-	str=str+"<p>"
+function GenerateBeginParagraph(dest_doc)
+	dest_doc:write("<p>")
 end
 
-function generateEndParagraph()
-	str=str+"</p>\n"
+function GenerateEndParagraph(dest_doc)
+	dest_doc:write("</p>\n")
 end
 
-function generateBeginPreformatted(source)
+function GenerateBeginPreformatted(dest_doc, source)
 	if(source) then
-		str=str+"<pre class=\""+SOURCE_CLASS+"\">"
+		dest_doc:write("<pre class=\""..SOURCE_CLASS.."\">")
 	else
-		str=str+"<pre>"
+		dest_doc:write("<pre>")
 	end
 end
 
-function generateEndPerformatted()
-	str = str + "</pre>\n"
+function GenerateEndPerformatted(dest_doc)
+	dest_doc:write("</pre>\n")
 end
 
-function generateBeginList()
-	str = str + "<ul>"
+function GenerateBeginList(dest_doc)
+	dest_doc:write("<ul>") 
 end
 
-function generateEndList()
-	str = str + "</ul>\n"
+function GenerateEndList(dest_doc)
+	dest_doc:write("</ul>\n")
 end
 
-function generateBeginListItem()
-	str = str + "<li>"
+function GenerateBeginListItem(dest_doc)
+	dest_doc:write("<li>")
 end
 
-function generateEndListItem()
-	str = str + "</li>\n"
+function GenerateEndListItem(dest_doc)
+	dest_doc:write("</li>\n")
 end
 
 
@@ -837,19 +900,256 @@ end
  *   Generate line numbers for SOURCE like items
  * SYNOPSIS
  ]]
-function generateItemLineNumber(lineNumberString)
+function GenerateItemLineNumber(dest_doc, lineNumberString)
 --[[
  * INPUTS
  *   o line_number_string -- the line number as string.
  * SOURCE
  ]]
-	colorString(2,LINE_NUMBER_CLASS,lineNumberString)
+	colorString(dest_doc, 2, LINE_NUMBER_CLASS, lineNumberString)
 end
 
 
---- todo ---
 function GenerateNavBarOneFilePerHeader(document, current_doc, current_header )
-
+	current_filename = GetFullDocname(current_header.owner.filename)
+	target_filename = GetFullDocname(current_header.owner.filename)
+	label = GetFullname(current_header.owner.filename)
+	if(current_header.parent) then
+		target_filename = GetFullDocname(current_header.parent.owner.filename)
+		label = current_header.parent.unique_name
+		label_name = current_header.parent.function_name
+		GenerateLink(current_doc, current_filename, target_filename, label, label_name, "menutiem")
+	end
+	-- FS TODO  one_file_per_header without   index is not logical
+	if( (course_of_action.do_index ) and (course_of_action.do_multidoc)) then
+		target_filename = GetSubIndexFileName(document.docroot.name, docuement.extension, current_header.htype)
+		label_name = current_header.htype.indexName
+		GenerateLink(current_doc, current_filename, target_filename, "robo_top_of_doc", label_name, "menuitem")
+	end
 end
 
+function GenerateHeaderStart(dest_doc, cur_header)
+	if(cur_header.name and cur_header.filename) then
+		dest_doc:write("<hr />\n")
+		GenerateLabel(dest_doc, cur_header.name)
+		dest_doc:write("<a name=\""..cur_header.unique_name.."\"></a><h2>")
+		header_type = FindHeaderType(cur_header.htype.typeCharacter)
+		for i=1, #cur_header.names do
+			-- If Section names only, do not print module name
+			if(i==1 and course_of_action.do_sectionsnameonly) then
+				GenerateString(dest_doc,cur_header.functioin_name)
+			else
+				GenerateString(dest_doc, cur_header.names[i-1])
+			end
+            -- Break lines after a predefined number of header names
+			if(i < #cur_header.names) then
+				if(i % header_breaks) then
+					dest_doc:write(", ")
+				else
+					dest_doc:write(",<br />")
+				end
+			end
+		end
+		-- Print header type (if available and not Section names only)
+		if(header_type and !(course_of_action.do_sectionsnameonly)) then
+			dest_doc:write(" [ ")
+			GenerateString(dest_doc, header_type.indexName)
+			dest_doc:write(" ] ")
+		end
+		dest_doc:write("</h2>\n\n")
+end
 
+--[[***f* HTML_Generator/RB_HTML_Generate_IndexMenu
+ * FUNCTION
+ *   Generates a menu to jump to the various master index files for
+ *   the various header types.  The menu is generated for each of the
+ *   master index files.  The current header type is highlighted.
+ * SYNOPSIS
+ ]]
+function GenerateIndexMenu(dest_doc, filename, document, cur_type )
+--[[
+ * INPUTS
+ *   * dest_doc       -- the output file.
+ *   * filename       -- the name of the output file
+ *   * document       -- the gathered documention.
+ *   * cur_headertype -- the header type that is to be highlighted.
+ ******
+ ]]
+	GenerateLink(dest_doc, filename, TOCIndexFilename(document), "top", "Table of Contents", "menuitem")
+	dest_doc:write("\n")
+	for type_char = MIN_HEADER_TYPE,MAX_HEADER_TYPE do
+		header_type = RB_FindHeaderType(type_char)
+		if(header_type) then
+			local n = NumberOfLinks(header_type, nil, false) + NumberOfLinks(header_type,	nil, true)
+			if ( n ) then
+				targetfilename = GetSubIndexFileName(document.docroot.name,document.ext,header_type)
+				assert(targetfilename)
+				GenerateLink(dest_doc, filename, targetfilename, "top", header_type.indexName, "menuitem")
+				dest_doc:write("\n")
+			end			
+		end
+	end
+end
+
+--[[***f* Generator/RB_Generate_TOC_2
+ * FUNCTION
+ *   Create a Table of Contents based on the headers found in
+ *   _all_ source files.   There is also a function to create
+ *   a table of contents based on the headers found in a single
+ *   source file RB_Generate_TOC_1
+ * SYNOPSIS
+ ]]
+function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
+ --[[
+ * INPUTS
+ *   * dest_doc -- the destination file.
+ *   * headers  -- an array of pointers to all the headers.
+ *   * count    -- the number of pointers in the array.
+ *   * output_mode -- global with the current output mode.
+ *   * owner    -- The owner of the TOC. Only the headers that are owned
+ *               by this owner are included in the TOC.  Can be NULL,
+ *               in which case all headers are included.
+ * SOURCE
+ ]]
+	for i=0,MAX_SECTION_DEPTH do  --todo------------
+		sectiontoc_counters[i]= 0;
+	end
+	dest_doc:write("<h3>TABLE OF CONTENTS</h3>\n")
+	if(course_of_action.do_sections) then
+		--[[ --sections was specified, create a TOC based on the
+         * hierarchy of the headers.
+		 ]]
+		dest_doc:write("<ul>\n")
+		for i=0, count do
+			header = headers[i]
+			if(owner == nil) then
+				if(header.parent) then
+					-- Will be done in the subfunction --
+				else
+					GenerateTOCSection(dest_doc, dest_name, header, headers, count, depth)
+				end
+			else
+				--[[ This is the TOC for a specific RB_Part (MultiDoc
+                 * documentation). We only include the headers that
+                 * are part of the subtree. That is, headers that are
+                 * parth the RB_Part, or that are childern of the
+                 * headers in the RB_Part.
+				 ]]
+				if( header.owner == owner) then
+					
+                    --[[ Any of the parents of this header should not
+                     * have the same owner as this header, otherwise
+                     * this header will be part of the TOC multiple times.
+					 ]]
+					 local no_bad_parent = true
+					 local parent = header.parent
+					 for i=0, #parent do ----------todo------------
+						 if(parent.owner == owner) then
+							 no_bad_parent = false
+							 break
+						 end
+					 end
+					 if (no_bad_parent) then
+						 GenerateTOCSection(dest_doc, dest_name, header, headers, count, depth)
+					 end
+				end
+			end
+		end
+		dest_doc:write("</ul>\n")
+	else
+		--[[ No --section option, generate a plain, one-level
+         * TOC
+		 ]]
+		dest_doc:write("<ul>\n")
+		for i=0, count do
+			header = headers[i]   --------todo---------
+			if(header.name and header.functioin_name and ((owner == nil) or ( header.owner == owner))) then
+				for j=0, #header.no_names do
+					dest_doc:write("<li>")
+					GenerateLink(dest_doc, header.filename, header.unique_name, header.names[j], 0)
+					dest_doc:write(<"</li>\n")
+				end
+			end
+		end
+		dest_doc:write("</ul>\n")
+	end
+end
+
+--[[***f* HTML_Generator/RB_HTML_Generate_Label
+ * FUNCTION
+ *   Generate a label (name) that can be refered too.
+ *   A label should consist of only alphanumeric characters so
+ *   all 'odd' characters are replaced with their ASCII code in
+ *   hex format.
+ * SYNOPSIS
+ ]]
+function GenerateLabel(dest_doc, name )
+--[[
+ * INPUTS
+ *   o dest_doc -- the file to write it to.
+ *   o name     -- the name of the label.
+ * SOURCE
+ ]]
+
+	local len = strlen(name)
+	dest_doc:write("<a name=\"")
+	for i=0, len do
+		c = name[i]
+		--- todo ----
+		if(utf8_isalnum(c)) then
+			GenerateChar(dest_doc,c)
+		else
+			----todo---
+
+		end
+	end
+	dest_doc:write("\"></a>\n")
+end
+
+function GenerateNavBar(dcument, current_doc, current_header)
+	current_filename = GetFullDocname(current_header.owner.filename)
+	target_filename = GetFullDocname(current_header.owner.filename)
+	label = GetFullname(current_header.owner.filename)
+	-- Then navigation bar
+	current_doc:write("<p>")
+	current_doc:write("[ ")
+	GenerateLink(current_doc, current_filename, nil, "robo_top_of_doc", "Top", 0)
+	current_doc:write(" ] ")
+
+	-- [ "Parentname" ]
+	if( current_header.parent) then
+		current_doc:write("[ ")
+		target_filename = GetFullDocname(current_header.parent.owner.filename)
+		label = current_header.parent.unique_name
+		label_name = current_header.parent.function_name
+		GenerateLink(current_doc, current_filename, target_filename, label, label_name, 0)
+		current_doc:write(" ] ")
+	end
+	current_doc:write("[ ")
+	label_name = current_header.htype.indexName
+	if( ( course_of_action.do_index) and (course_of_action.do_multidoc)) then
+		target_filename = GetSubIndexFileName(document.docroot.name, document.extension, current_header.htype)
+		GenerateLink(curren_doc, current_filename, target_filename, "robo_top_of_doc", label_name, 0)
+	else
+		GenerateString(current_doc, label_name)
+	end
+	current_doc:write(" ]</p>\n")
+end
+
+function GenerateDocEnd(dest_doc, name, src_name)
+	GenerateDiv(dest_doc, "footer")
+	if(course_of_action.do_nogenwith) then
+		dest_doc:write("<p>Generated from "..src_name.." on ")
+		TimeStamp(dest_doc)
+		dest_doc:write("</p>\n")
+	else
+		dest_doc:write("<p>Generated from"..src_name.." with <a href=\"http://www.xs4all.nl/~rfsber/Robo/robodoc.html\">ROBODoc</a> V"..VERSION.." on ") 
+		TimeStamp(dest_doc)
+		dest_doc:write("</p>\n")
+	end
+	GenerateDivEnd(dest_doc, "footer")
+	if(course_of_action.do_footless) then
+	else
+		dest_doc:write("</body>\n</html>\n")
+	end
+end

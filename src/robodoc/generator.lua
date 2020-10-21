@@ -545,11 +545,9 @@ function GenerateHeaderStart(dest_doc, cur_header,srcRoot)
         end,
         ['RTF'] = function()  
             RTFGenerateHeaderStart( dest_doc, cur_header );
-            -- RTFGenerateDocEnd( DestDoc,);
         end,
         ['ASCII'] = function()  
             ASCIIGenerateHeaderStart( dest_doc, cur_header );
-        -- ASCIIGenerateDocEnd( DestDoc, );
         end,
         ['TROFF'] = function()
             -- //
@@ -705,7 +703,7 @@ end
 function GenerateBeginNavigation(dest_doc )
     local switch = { 
         ['HTML'] = function()	
-            HTMLGenerateBeginNavigation( dest_doc )
+            html.GenerateBeginNavigation( dest_doc )
         end, 
     }
 
@@ -735,7 +733,7 @@ end
 function GenerateIndexMenu(dest_doc, filename, document )
     local switch = { 
         ['HTML'] = function()	
-            HTMLGenerateIndexMenu( dest_doc, filename, document, nil )
+            html.GenerateIndexMenu( dest_doc, filename, document, nil )
         end, 
     }
 
@@ -804,4 +802,33 @@ function GenerateIndex(document )
     end
 end
 
+function GeneratePart(document_file, document, part)
+    local docname
+    docname = document.docname
+    if(output_mode == TROFF) then
+        ---------- todo -------
+    end
+    for i=0, #part.headers do
+        document_file = GenerateHeaderStart(document_file, i_header, document.srcroot.name)
+        GenerateNavBar(document, document_file, i_header)
+        GenerateIndexEntry(document_file, document.doctype, i_header)
+        GenerateHeader(document_file, i_header, docname)
+        GenerateHeaderEnd(document_file, i_header)
+    end
+end
+
+function GenerateNavBar(document, current_doc, current_header)
+    local switch = { 
+        ['HTML'] = function()	
+            GenerateNavBar( dest_doc )
+        end, 
+    }
+
+    local f = switch[output_mode]
+    if (f) then
+        f()
+    else           --for default
+        -- todo
+    end
+end
 

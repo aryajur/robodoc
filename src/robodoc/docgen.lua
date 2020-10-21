@@ -14,6 +14,9 @@ local pairs = pairs
 local string = string
 local next = next
 
+MIN_HEADER_TYPE = 1
+MAX_HEADER_TYPE = 127
+
 local M = {}
 package.loaded[...] = M
 if setfenv and type(setfenv) == "function" then
@@ -901,9 +904,9 @@ local function genMultiDoc(document)
 		html.createCSS(document)
 	end
 	
-	local output_mod = globals.output_mod or "HTML" -- todo have to edit this
+	local output_mod = globals.output_mod or "HTML" --  have to edit this
 	for i=1, #document.parts do
-		local filename = document.parts[i].srcfile.file
+		local srcname = document.parts[i].srcfile.file
 		local docname = document.parts[i].srcfile.path..document.parts[i].srcfile.file
 		--check total numbers of header is not zero
 		if output_mod != "TROFF" then
@@ -917,7 +920,8 @@ local function genMultiDoc(document)
 			generator.GenerateBeginNavigation(document_file)
 
 			if(document.actions.do_one_file_per_header) then
-				html.GenerateNavBarOneFilePerHeader(document,document_file,document.parts[i].headers)
+				---- todo ----
+				html.GenerateNavBarOneFilePerHeader(document,document_file,document.parts[i].headers)  
 			else
 				generator.GenerateIndexMenu(document_file,docname,document)
 			end
