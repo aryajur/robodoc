@@ -25,12 +25,95 @@ else
 	_ENV = M		-- Lua 5.2
 end
 
-
 --[[
 	* getLenExtention(extention)
 	
 ]]
 local sourceExt
+
+
+--[[***f* HeaderTypes/RB_FindHeaderType
+ * FUNCTION
+ *   Return the header type that corresponds to the type character.
+ * RESULT
+ *   * 0  -- there is no such header type
+ *   * pointer to the header type otherwise.
+ * SOURCE
+]]
+function FindHeaderType(typeCharacter)
+	--------TODO-------------
+	return HeaderTypeLookTable[typeCharacter]
+	
+end
+
+--[[***f* Filename/Get_Fullname
+ * NAME
+ *   Get_Fullname --
+ * SYNOPSIS
+ ]]
+function GetSubIndexFileName(docroot, extension, headertype)
+--[[
+ * INPUTS
+ *   * docroot      -- the path to the documentation directory.
+ *   * extension    -- the extension for the file
+ *   * header_type  -- the header type
+ * RESULT
+ *   a pointer to a freshly allocated string.
+ * NOTES
+ *   Has too many parameters.
+ * SOURCE
+ ]]
+	assert(docroot)
+	local filename = ""
+	filename = filename..docroot
+	filename = filename..headertype.filename
+	filename = filename..extension
+	return filename
+end
+
+--[[****f* docgen/getFullDocname
+* FUNCTION
+	Return FullDocname
+* INPUTS
+	o file			-- file name to get full docname
+* SYNOPSYS
+]]
+function getFullDocname(filename)
+	if filename.fulldocname ~= nil then
+		return filename.fulldocname
+	else
+		local result = ""
+		result = result..filename.path.docname
+		result = result..filename.docname
+		return result
+	end
+end
+
+--[[***f* Filename/Get_Fullname
+ * NAME
+ *   Get_Fullname --
+ * SYNOPSIS
+ ]]
+function getFullName(filename)
+--[[
+ * FUNCTION
+ *   Give the full name of the file, that is the name of
+ *   the file including the extension and the path.
+ *   The path can be relative or absolute.
+ * NOTE
+ *   The string returned is owned by this function
+ *   so don't change it.
+ * SOURCE
+ ]]
+	if filename.fulldocname ~= nil then
+		return filename.fullname
+	else
+		local result = ""
+		result = result..filename.path.name
+		result = result..filename.name
+		return result
+	end
+end
 
 --[[****f* docgen/isSourceFile
 * FUNCTION
@@ -480,7 +563,7 @@ local function analyse_items(header,actions,ri)
 		end
 		if #item.lines > 0 then
 			if not source and (actions.do_nopre or tu.inArray(config.format_items or {},config.items[item.itemType])) and
-			  not tu.inArray(config.preformatted_items or {},config.items[item.itemtype) then
+			  not tu.inArray(config.preformatted_items or {},config.items[item.itemtype]) then
 				-- Analyse indentation
 				local indent = Analyse_Indentation()
 				Analyse_List(indent)
@@ -899,19 +982,21 @@ local function genMultiDoc(document)
 	-- Sort all the links
 	table.sort(document.links,function(one,two) return one.object_name < two.object_name end)
 
-
-	if(document.Option == "html") then
+    logger:info("Creating CSS file..")
+	if(globals.docformats.name == "html") then  
 		html.createCSS(document)
 	end
 	
-	local output_mod = globals.output_mod or "HTML" --  have to edit this
 	for i=1, #document.parts do
 		local srcname = document.parts[i].srcfile.file
 		local docname = document.parts[i].srcfile.path..document.parts[i].srcfile.file
-		--check total numbers of header is not zero
-		if output_mod != "TROFF" then
+		
+		if #document.header == 0 then
+			break   --TODO--
+		end
+		if globals.docformats.name == "HTML" then
 
-			document_file,msg = io.Open(document.parts[i].srcfile.file)
+			document_file, msg = io.Open(document.parts[i].srcfile.file)
 			if not document_file then
 				logger:error("Cannot open file"..document.parts[i].srcfile.file)
 			end
@@ -920,31 +1005,70 @@ local function genMultiDoc(document)
 			generator.GenerateBeginNavigation(document_file)
 
 			if(document.actions.do_one_file_per_header) then
-				---- todo ----
 				html.GenerateNavBarOneFilePerHeader(document,document_file,document.parts[i].headers)  
 			else
 				generator.GenerateIndexMenu(document_file,docname,document)
 			end
+
 			generator.GenerateEndNavigation(document_file)
 			generator.GenerateBeginContent(document_file)
+
 			if((document.actions.do_toc) and (document.no_headers)) then
 				generator.GenerateTOC2(document_file,document.headers,document.no_headers,document.parts[i],docname)
 			end
-			GeneratePart(document_file,document,document.parts[i])
+
+			GeneratePart(document_file, document, i_part)
 			generator.GenerateEndContent(document_file)
-			GenerateDocEnd(document_file,docname,srcname)
+			generator.GenerateDocEnd(document_file,docname,srcname)
 			document_file:close()
 		else
-			--GeneratePart(document_file, document, i)
+			GeneratePart(document_file, document, i_part)
 		end
 
 	end
 	if(document.actions.do_index) then
 		generator.GenerateIndex(document)
 	end
-
-	FreeLinks()
 end
+
+--[[***f* Generator/RB_Generate_Part
+ * FUNCTION
+ *   Generate the documention for all the headers found in a single
+ *   source file.
+ * SYNOPSIS
+ ]]
+function GeneratePart(document_file, document, part)
+--[[
+ * INPUTS
+ *   * document_file -- The file were it stored.
+ *   * document      -- All the documentation.
+ *   * part          -- pointer to a RB_Part that contains all the headers found
+ *                    in a single source file.
+ * SOURCE
+]]
+	logger:info("Generating documentation for file ",srcname)
+	if( document.actions.do_singledoc) then
+		docname = document.singledoc_name
+	else if document.actions.do_multidoc then
+		docname = document.parts.srcfile.path..document.parts.srcfile.file
+	else if document.actions.do_singlefile then
+		docname = document.singledoc_name
+	else
+	 -----------
+	end
+	-------Troff Mode -------
+
+	for i_header = 0, #part.headers do 
+		logger:info("generating documentation for header",part.headers[i_header].name)
+		document_file = generator.GenerateHeaderStart(document_file, part.headers[i_header],document.srcroot.name)
+		generator.GenerateNavBar(document, document_file, part.headers[i_header])
+		--RB_html_Generate_index_entry is not availabe in robodoc
+		--generator.GenerateIndexEntry(document_file, document.doctype, part.headers[i_header])
+		generator.GenerateHeader(document_file, part.headers[i_header], docname)
+		generator.GenerateHeaderEnd(document_file, part.headers[i_header])
+	end
+end
+
 
 function docgen(document)
 	sourceExt = document.srcextension

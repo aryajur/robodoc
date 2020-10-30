@@ -1,6 +1,22 @@
 
+local globals = require("robodoc.globals")
+globals.html = require("robodoc.outputs.html")
 
-local output_mode
+local string = string
+local table = table
+local tonumber = tonumber
+local pairs = pairs
+local string = string
+local next = next
+
+local M = {}
+package.loaded[...] = M
+if setfenv and type(setfenv) == "function" then
+	setfenv(1,M)	-- Lua 5.1
+else
+	_ENV = M		-- Lua 5.2
+end
+
 -- TODO Documentation */
 function GenerateFalseLink(dest_doc, name )
     --Todo Ducumentation
@@ -345,7 +361,7 @@ function GenerateIndexEntry(dest_doc, doctype, header )
  *   * output_mode -- global with the current output mode.
  * SOURCE
 ]]
-        --- TODO ---
+        --NotForHTML
 end
 
 --[[***f* Generator/RB_Generate_TOC_2
@@ -429,7 +445,7 @@ function  GenerateDocStart(document, DestDoc, SrcName, title, toc, dest_name, ch
         end,
         ['HTML'] = function()	
 
-            HTMLGenerateDocStart( DestDoc, SrcName, title, dest_name,charset )
+            html.GenerateDocStart( DestDoc, SrcName, title, dest_name,charset )
         end,
         ['LaTeX'] = function()  
             LaTeXGenerateDocStart( DestDoc, SrcName, title, charset )
@@ -445,7 +461,7 @@ function  GenerateDocStart(document, DestDoc, SrcName, title, toc, dest_name, ch
         end
     }
 
-    local f = switch[output_mode]
+    local f = switch[string.upper(globals.docformats.name)]
     if (f) then
         f()
     else           --for default
@@ -485,7 +501,7 @@ function GenerateDocEnd(DestDoc, name, SrcName )
         end,
         ['HTML'] = function()	
 
-            HTMLGenerateDocEnd( DestDoc, name, SrcName );
+            html.GenerateDocEnd( DestDoc, name, SrcName );
         end,
         ['LaTeX'] = function()  
             LaTeXGenerateDocEnd( DestDoc, name );
@@ -538,7 +554,7 @@ function GenerateHeaderStart(dest_doc, cur_header,srcRoot)
         end,
         ['HTML'] = function()	
 
-            HTMLGenerateHeaderStart( DestDoc, cur_header );
+            html.GenerateHeaderStart( DestDoc, cur_header );
         end,
         ['LaTeX'] = function()  
             LaTeXGenerateHeaderStart( DestDoc, cur_header );
@@ -594,7 +610,7 @@ function GenerateHeaderEnd(dest_doc, cur_header )
         end,
         ['HTML'] = function()	
 
-            HTMLGenerateHeaderEnd( dest_doc, cur_header )
+            html.GenerateHeaderEnd( dest_doc, cur_header )
         end,
         ['LaTeX'] = function()  
             LaTeXGenerateHeaderEnd( dest_doc, cur_header )
@@ -688,7 +704,7 @@ end
 function GenerateEndContent(dest_doc )
     local switch = { 
         ['HTML'] = function()	
-            HTMLGenerateEndContent( dest_doc )
+            html.GenerateEndContent( dest_doc )
         end, 
     }
 
@@ -718,7 +734,7 @@ end
 function GenerateEndNavigation(dest_doc )
     local switch = { 
         ['HTML'] = function()	
-            HTMLGenerateEndNavigation( dest_doc )
+            html.GenerateEndNavigation( dest_doc )
         end, 
     }
 
@@ -749,7 +765,7 @@ end
 function GenerateBeginExtra(dest_doc )
     local switch = { 
         ['HTML'] = function()	
-            HTMLGenerateBeginExtra( dest_doc )
+            html.GenerateBeginExtra( dest_doc )
         end, 
     }
 
@@ -802,19 +818,53 @@ function GenerateIndex(document )
     end
 end
 
-function GeneratePart(document_file, document, part)
-    local docname
-    docname = document.docname
-    if(output_mode == TROFF) then
-        ---------- todo -------
+--[[***f* Generator/Generate_Header
+ * FUNCTION
+ *   Generate the documentation for all the items found in
+ *   a header except for any items specified in
+ *   configuration.ignore_items.
+ * SYNOPSIS
+ ]]
+ function GenerateHeader(f, header, docname)
+    --[[
+ * INPUTS
+ *   * f -- destination file
+ *   * header -- header to be searched.
+ *   * srcname -- name of the source file the header was found in.
+ *   * docname -- name of the documentation file.
+ * BUGS
+ *   This skips the first item body if the first item name was
+ *   not correctly spelled.
+ * SOURCE
+ ]]
+    for cur_item = 1, #header.items do
+        if (false) then  -- condition = Is_Ignore_Item( name )
+            --User does not want this item
+        else if (false) then --condition = Works_Like_SourceItem( item_type )
+            --User does not want source items
+        else
+            GenerateItem(f, header, cur_item, docname)
+        end
     end
-    for i=0, #part.headers do
-        document_file = GenerateHeaderStart(document_file, i_header, document.srcroot.name)
-        GenerateNavBar(document, document_file, i_header)
-        GenerateIndexEntry(document_file, document.doctype, i_header)
-        GenerateHeader(document_file, i_header, docname)
-        GenerateHeaderEnd(document_file, i_header)
-    end
+end
+
+--[[***f* Generator/Generate_Item
+ * SYNOPSIS
+ ]]
+function GenerateItem(f, header, cur_item, docname)
+
+--[[ FUNCTION
+  *   Generate the documentation for a single item.
+  *
+  * NOTE
+  *   This function is way too long...
+  *
+  * SOURCE
+  ]]
+  GenerateItemName(f, item_type)
+  GenerateItemBegin(f, name)
+  --TODO-----
+
 end
 
 function GenerateNavBar(document, current_doc, current_header)

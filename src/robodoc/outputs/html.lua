@@ -17,6 +17,8 @@ local globals = require("robodoc.globals")
 local docformats = globals.docformats
 local logger = globals.logger
 local os = os
+local docgen = require("docgen")
+local bool = bool
 
 local M = {}
 package.loaded[...] = M
@@ -54,8 +56,7 @@ end
  
 function TOCIndexFilename(document)
 	toc_index_name = "toc_index.html"
-	toc_index_path = document.docroot.name
-	toc_index_path = toc_index_path..toc_index_name
+	toc_index_path = document.docroot.name..toc_index_name
 	return toc_index_name
 end
 
@@ -153,304 +154,304 @@ function createCSS(document)
 		local CssfileVar = io.open(cssfile,"w")
 		if(CssfileVar) then
 			CssfileVar:write("/****h* ROBODoc/ROBODoc Cascading Style Sheet\n"
-			" * FUNCTION\n"
-			" *   This is the default cascading style sheet for documentation\n"
-			" *   Generated with ROBODoc.\n"
-			" *   You can edit this file to your own liking and then use\n"
-			" *   it with the option\n"
-			" *      --css <filename>\n"
-			" *\n"
-			" *   This style-sheet defines the following layout\n"
-			" *      +----------------------------------------+\n"
-			" *      |    logo                                |\n"
-			" *      +----------------------------------------+\n"
-			" *      |    extra                               |\n"
-			" *      +----------------------------------------+\n"
-			" *      |                              | navi-   |\n"
-			" *      |                              | gation  |\n"
-			" *      |      content                 |         |\n"
-			" *      |                              |         |\n"
-			" *      +----------------------------------------+\n"
-			" *      |    footer                              |\n"
-			" *      +----------------------------------------+\n"
-			" *\n"
-			" *   This style-sheet is based on a style-sheet that was automatically\n"
-			" *   Generated with the Strange Banana stylesheet generator.\n"
-			" *   See http://www.strangebanana.com/generator.aspx\n"
-			" *\n"
-			" ******\n"
-			" * $Id: html_generator.c,v 1.93 2008/03/13 10:34:50 thuffir Exp $\n"
-			" */\n"
-			"\n"
-			"body\n"
-			"{\n"
-			"    background-color:    rgb(255,255,255);\n"
-			"    color:               rgb(98,84,55);\n"
-			"    font-family:         Arial, serif;\n"
-			"    border-color:        rgb(226,199,143);\n"
-			"}\n"
-			"\n"
-			"pre\n"
-			"{\n"
-			"    font-family:      monospace;\n"
-			"    margin:      15px;\n"
-			"    padding:     5px;\n"
-			"    white-space: pre;\n"
-			"    color:       #000;\n"
-			"}\n"
-			"\n"
-			"pre.source\n"
-			"{\n"
-			"    background-color: #ffe;\n"
-			"    border: dashed #aa9 1px;\n"
-			"}\n"
-			"\n"
-			"p\n"
-			"{\n"
-			"    margin:15px;\n"
-			"}\n"
-			"\n"
-			"p.item_name \n"
-			"{\n"
-			"    font-weight: bolder;\n"
-			"    margin:5px;\n"
-			"    font-size: 120%%;\n"
-			"}\n"
-			"\n"
-			"#content\n" "{\n" "    font-size:           100%%;\n")
+			.." * FUNCTION\n"
+			.." *   This is the default cascading style sheet for documentation\n"
+			.." *   Generated with ROBODoc.\n"
+			.." *   You can edit this file to your own liking and then use\n"
+			.." *   it with the option\n"
+			.." *      --css <filename>\n"
+			.." *\n"
+			.." *   This style-sheet defines the following layout\n"
+			.." *      +----------------------------------------+\n"
+			.." *      |    logo                                |\n"
+			.." *      +----------------------------------------+\n"
+			.." *      |    extra                               |\n"
+			.." *      +----------------------------------------+\n"
+			.." *      |                              | navi-   |\n"
+			.." *      |                              | gation  |\n"
+			.." *      |      content                 |         |\n"
+			.." *      |                              |         |\n"
+			.." *      +----------------------------------------+\n"
+			.." *      |    footer                              |\n"
+			.." *      +----------------------------------------+\n"
+			.." *\n"
+			.." *   This style-sheet is based on a style-sheet that was automatically\n"
+			.." *   Generated with the Strange Banana stylesheet generator.\n"
+			.." *   See http://www.strangebanana.com/generator.aspx\n"
+			.." *\n"
+			.." ******\n"
+			.." * $Id: html_generator.c,v 1.93 2008/03/13 10:34:50 thuffir Exp $\n"
+			.." */\n"
+			.."\n"
+			.."body\n"
+			.."{\n"
+			.."    background-color:    rgb(255,255,255);\n"
+			.."    color:               rgb(98,84,55);\n"
+			.."    font-family:         Arial, serif;\n"
+			.."    border-color:        rgb(226,199,143);\n"
+			.."}\n"
+			.."\n"
+			.."pre\n"
+			.."{\n"
+			.."    font-family:      monospace;\n"
+			.."    margin:      15px;\n"
+			.."    padding:     5px;\n"
+			.."    white-space: pre;\n"
+			.."    color:       #000;\n"
+			.."}\n"
+			.."\n"
+			.."pre.source\n"
+			.."{\n"
+			.."    background-color: #ffe;\n"
+			.."    border: dashed #aa9 1px;\n"
+			.."}\n"
+			.."\n"
+			.."p\n"
+			.."{\n"
+			.."    margin:15px;\n"
+			.."}\n"
+			.."\n"
+			.."p.item_name \n"
+			.."{\n"
+			.."    font-weight: bolder;\n"
+			.."    margin:5px;\n"
+			.."    font-size: 120%%;\n"
+			.."}\n"
+			.."\n"
+			.."#content\n".."{\n".."    font-size:           100%%;\n")
 
 			CssfileVar:write("    color:               rgb(0,0,0);\n"
-			"    background-color:    rgb(255,255,255);\n"
-			"    border-left-width:   0px; \n"
-			"    border-right-width:  0px; \n"
-			"    border-top-width:    0px; \n"
-			"    border-bottom-width: 0px;\n"
-			"    border-left-style:   none; \n"
-			"    border-right-style:  none; \n"
-			"    border-top-style:    none; \n"
-			"    border-bottom-style: none;\n"
-			"    padding:             40px 31px 14px 17px;\n"
-			"    border-color:        rgb(0,0,0);\n"
-			"    text-align:          justify;\n"
-			"}\n"
-			"\n"
-			"#navigation\n"
-			"{\n"
-			"    background-color: rgb(98,84,55);\n"
-			"    color:            rgb(230,221,202);\n"
-			"    font-family:      \"Times New Roman\", serif;\n"
-			"    font-style:       normal;\n"
-			"    border-color:     rgb(0,0,0);\n"
-			"}\n"
-			"\n"
-			"a.menuitem\n"
-			"{\n"
-			"    font-size: 120%%;\n"
-			"    background-color:    rgb(0,0,0);\n"
-			"    color:               rgb(195,165,100);\n"
-			"    font-variant:        normal;\n"
-			"    text-transform:      none;\n"
-			"    font-weight:         normal;\n"
-			"    padding:             1px 8px 3px 1px;\n"
-			"    margin-left:         5px; \n"
-			"    margin-right:        5px; \n"
-			"    margin-top:          5px; \n"
-			"    margin-bottom:       5px;\n"
-			"    border-color:        rgb(159,126,57);\n"
-			"    text-align:          right;\n"
-			"}\n"
-			"\n"
-			"#logo, #logo a\n"
-			"{\n"
-			"    font-size: 130%%;\n"
-			"    background-color:   rgb(198,178,135);\n"
-			"    color:              rgb(98,84,55);\n"
-			"    font-family:        Georgia, serif;\n"
-			"    font-style:         normal;\n"
-			"    font-variant:       normal;\n"
-			"    text-transform:     none;\n"
-			"    font-weight:        bold;\n"
-			"    padding:            20px 18px 20px 18px;\n"
-			"    border-color:       rgb(255,255,255);\n"
-			"    text-align:         right;\n"
-			"}\n"
-			"\n"
-			"#extra, #extra a\n"
-			"{\n"
-			"    font-size: 128%%;\n"
-			"    background-color:    rgb(0,0,0);\n"
-			"    color:               rgb(230,221,202);\n"
-			"    font-style:          normal;\n"
-			"    font-variant:        normal;\n"
-			"    text-transform:      none;\n"
-			"    font-weight:         normal;\n" )
+			.."    background-color:    rgb(255,255,255);\n"
+			.."    border-left-width:   0px; \n"
+			.."    border-right-width:  0px; \n"
+			.."    border-top-width:    0px; \n"
+			.."    border-bottom-width: 0px;\n"
+			.."    border-left-style:   none; \n"
+			.."    border-right-style:  none; \n"
+			.."    border-top-style:    none; \n"
+			.."    border-bottom-style: none;\n"
+			.."    padding:             40px 31px 14px 17px;\n"
+			.."    border-color:        rgb(0,0,0);\n"
+			.."    text-align:          justify;\n"
+			.."}\n"
+			.."\n"
+			.."#navigation\n"
+			.."{\n"
+			.."    background-color: rgb(98,84,55);\n"
+			.."    color:            rgb(230,221,202);\n"
+			.."    font-family:      \"Times New Roman\", serif;\n"
+			.."    font-style:       normal;\n"
+			.."    border-color:     rgb(0,0,0);\n"
+			.."}\n"
+			.."\n"
+			.."a.menuitem\n"
+			.."{\n"
+			.."    font-size: 120%%;\n"
+			.."    background-color:    rgb(0,0,0);\n"
+			.."    color:               rgb(195,165,100);\n"
+			.."    font-variant:        normal;\n"
+			.."    text-transform:      none;\n"
+			.."    font-weight:         normal;\n"
+			.."    padding:             1px 8px 3px 1px;\n"
+			.."    margin-left:         5px; \n"
+			.."    margin-right:        5px; \n"
+			.."    margin-top:          5px; \n"
+			.."    margin-bottom:       5px;\n"
+			.."    border-color:        rgb(159,126,57);\n"
+			.."    text-align:          right;\n"
+			.."}\n"
+			.."\n"
+			.."#logo, #logo a\n"
+			.."{\n"
+			.."    font-size: 130%%;\n"
+			.."    background-color:   rgb(198,178,135);\n"
+			.."    color:              rgb(98,84,55);\n"
+			.."    font-family:        Georgia, serif;\n"
+			.."    font-style:         normal;\n"
+			.."    font-variant:       normal;\n"
+			.."    text-transform:     none;\n"
+			.."    font-weight:        bold;\n"
+			.."    padding:            20px 18px 20px 18px;\n"
+			.."    border-color:       rgb(255,255,255);\n"
+			.."    text-align:         right;\n"
+			.."}\n"
+			.."\n"
+			.."#extra, #extra a\n"
+			.."{\n"
+			.."    font-size: 128%%;\n"
+			.."    background-color:    rgb(0,0,0);\n"
+			.."    color:               rgb(230,221,202);\n"
+			.."    font-style:          normal;\n"
+			.."    font-variant:        normal;\n"
+			.."    text-transform:      none;\n"
+			.."    font-weight:         normal;\n" )
 			CssfileVar:write("    border-left-width:   0px; \n"
-			"    border-right-width:  0px; \n"
-			"    border-top-width:    0px; \n"
-			"    border-bottom-width: 0px;\n"
-			"    border-left-style:   none; \n"
-			"    border-right-style:  none; \n"
-			"    border-top-style:    none; \n"
-			"    border-bottom-style: none;\n"
-			"    padding: 12px 12px 12px 12px;\n"
-			"    border-color:        rgb(195,165,100);\n"
-			"    text-align:          center;\n"
-			"}\n"
-			"\n"
-			"#content a\n"
-			"{\n"
-			"    color:              rgb(159,126,57);\n"
-			"    text-decoration:    none;\n"
-			"}\n"
-			"\n"
-			"#content a:hover, #content a:active\n"
-			"{\n"
-			"    color:              rgb(255,255,255);\n"
-			"    background-color:   rgb(159,126,57);\n"
-			"}\n"
-			"\n"
-			"a.indexitem\n"
-			"{\n"
-			"    display: block;\n"
-			"}\n"
-			"\n"
-			"h1, h2, h3, h4, h5, h6\n"
-			"{\n"
-			"    background-color: rgb(221,221,221);\n"
-			"    font-family:      Arial, serif;\n"
-			"    font-style:       normal;\n"
-			"    font-variant:     normal;\n"
-			"    text-transform:   none;\n"
-			"    font-weight:      normal;\n"
-			"}\n"
-			"\n"
-			"h1\n"
-			"{\n"
-			"    font-size: 151%%;\n"
-			"}\n"
-			"\n"
-			"h2\n"
-			"{\n"
-			"    font-size: 142%%;\n"
-			"}\n"
-			"\n"
-			"h3\n"
-			"{\n"
-			"    font-size: 133%%;\n"
-			"}\n"
-			"\n"
-			"h4\n"
-			"{\n"
-			"    font-size: 124%%;\n"
-			"}\n"
-			"\n"
-			"h5\n"
-			"{\n"
-			"    font-size: 115%%;\n"
-			"}\n"
-			"\n"
-			"h6\n"
-			"{\n"
-			"    font-size: 106%%;\n"
-			"}\n"
-			"\n"
-			"#navigation a\n"
-			"{\n"
-			"    text-decoration: none;\n"
-			"}\n"
-			"\n"
-			".menuitem:hover\n"
-			"{\n"
-			"    background-color:   rgb(195,165,100);\n"
-			"    color:              rgb(0,0,0);\n"
-			"}\n"
-			"\n"
-			"#extra a\n"
-			"{\n"
-			"    text-decoration: none;\n"
-			"}\n"
-			"\n"
-			"#logo a\n"
-			"{\n"
-			"    text-decoration: none;\n"
-			"}\n"
-			"\n"
-			"#extra a:hover\n"
-			"{\n"
-			"}\n"
-			"\n"
-			"/* layout */\n"
-			"#navigation\n"
-			"{\n"
-			"    width:       22%%; \n"
-			"    position:    relative; \n"
-			"    top:         0; \n"
-			"    right:       0; \n"
-			"    float:       right; \n"
-			"    text-align:  center;\n"
-			"    margin-left: 10px;\n"
-			"}\n"
-			"\n"
-			".menuitem       {width: auto;}\n"
-			"#content        {width: auto;}\n"
-			".menuitem       {display: block;}\n" "\n" "\n")
+			.."    border-right-width:  0px; \n"
+			.."    border-top-width:    0px; \n"
+			.."    border-bottom-width: 0px;\n"
+			.."    border-left-style:   none; \n"
+			.."    border-right-style:  none; \n"
+			.."    border-top-style:    none; \n"
+			.."    border-bottom-style: none;\n"
+			.."    padding: 12px 12px 12px 12px;\n"
+			.."    border-color:        rgb(195,165,100);\n"
+			.."    text-align:          center;\n"
+			.."}\n"
+			.."\n"
+			.."#content a\n"
+			.."{\n"
+			.."    color:              rgb(159,126,57);\n"
+			.."    text-decoration:    none;\n"
+			.."}\n"
+			.."\n"
+			.."#content a:hover, #content a:active\n"
+			.."{\n"
+			.."    color:              rgb(255,255,255);\n"
+			.."    background-color:   rgb(159,126,57);\n"
+			.."}\n"
+			.."\n"
+			.."a.indexitem\n"
+			.."{\n"
+			.."    display: block;\n"
+			.."}\n"
+			.."\n"
+			.."h1, h2, h3, h4, h5, h6\n"
+			.."{\n"
+			.."    background-color: rgb(221,221,221);\n"
+			.."    font-family:      Arial, serif;\n"
+			.."    font-style:       normal;\n"
+			.."    font-variant:     normal;\n"
+			.."    text-transform:   none;\n"
+			.."    font-weight:      normal;\n"
+			.."}\n"
+			.."\n"
+			.."h1\n"
+			.."{\n"
+			.."    font-size: 151%%;\n"
+			.."}\n"
+			.."\n"
+			.."h2\n"
+			.."{\n"
+			.."    font-size: 142%%;\n"
+			.."}\n"
+			.."\n"
+			.."h3\n"
+			.."{\n"
+			.."    font-size: 133%%;\n"
+			.."}\n"
+			.."\n"
+			.."h4\n"
+			.."{\n"
+			.."    font-size: 124%%;\n"
+			.."}\n"
+			.."\n"
+			.."h5\n"
+			.."{\n"
+			.."    font-size: 115%%;\n"
+			.."}\n"
+			.."\n"
+			.."h6\n"
+			.."{\n"
+			.."    font-size: 106%%;\n"
+			.."}\n"
+			.."\n"
+			.."#navigation a\n"
+			.."{\n"
+			.."    text-decoration: none;\n"
+			.."}\n"
+			.."\n"
+			..".menuitem:hover\n"
+			.."{\n"
+			.."    background-color:   rgb(195,165,100);\n"
+			.."    color:              rgb(0,0,0);\n"
+			.."}\n"
+			.."\n"
+			.."#extra a\n"
+			.."{\n"
+			.."    text-decoration: none;\n"
+			.."}\n"
+			.."\n"
+			.."#logo a\n"
+			.."{\n"
+			.."    text-decoration: none;\n"
+			.."}\n"
+			.."\n"
+			.."#extra a:hover\n"
+			.."{\n"
+			.."}\n"
+			.."\n"
+			.."/* layout */\n"
+			.."#navigation\n"
+			.."{\n"
+			.."    width:       22%%; \n"
+			.."    position:    relative; \n"
+			.."    top:         0; \n"
+			.."    right:       0; \n"
+			.."    float:       right; \n"
+			.."    text-align:  center;\n"
+			.."    margin-left: 10px;\n"
+			.."}\n"
+			.."\n"
+			..".menuitem       {width: auto;}\n"
+			.."#content        {width: auto;}\n"
+			..".menuitem       {display: block;}\n".."\n".."\n")
 			CssfileVar:write(                     "div#footer\n"
-			"{\n"
-			"    background-color: rgb(198,178,135);\n"
-			"    color:      rgb(98,84,55);\n"
-			"    clear:      left;\n"
-			"    width:      100%%;\n"
-			"    font-size:   71%%;\n"
-			"}\n"
-			"\n"
-			"div#footer a\n"
-			"{\n"
-			"    background-color: rgb(198,178,135);\n"
-			"    color:            rgb(98,84,55);\n"
-			"}\n"
-			"\n"
-			"div#footer p\n"
-			"{\n"
-			"    margin:0;\n"
-			"    padding:5px 10px\n"
-			"}\n"
-			"\n"
-			"span.keyword\n"
-			"{\n"
-			"    color: #00F;\n"
-			"}\n"
-			"\n"
-			"span.comment\n"
-			"{\n"
-			"    color: #080;\n"
-			"}\n"
-			"\n"
-			"span.quote\n"
-			"{\n"
-			"    color: #F00;\n"
-			"}\n"
-			"\n"
-			"span.squote\n"
-			"{\n"
-			"    color: #F0F;\n"
-			"}\n"
-			"\n"
-			"span.sign\n"
-			"{\n"
-			"    color: #008B8B;\n"
-			"}\n"
-			"\n"
-			"span.line_number\n"
-			"{\n"
-			"    color: #808080;\n"
-			"}\n"
-			"\n"
-			"@media print\n"
-			"{\n"
-			"    #navigation {display: none;}\n"
-			"    #content    {padding: 0px;}\n"
-			"    #content a  {text-decoration: underline;}\n"
-			"}\n" )
+			.."{\n"
+			.."    background-color: rgb(198,178,135);\n"
+			.."    color:      rgb(98,84,55);\n"
+			.."    clear:      left;\n"
+			.."    width:      100%%;\n"
+			.."    font-size:   71%%;\n"
+			.."}\n"
+			.."\n"
+			.."div#footer a\n"
+			.."{\n"
+			.."    background-color: rgb(198,178,135);\n"
+			.."    color:            rgb(98,84,55);\n"
+			.."}\n"
+			.."\n"
+			.."div#footer p\n"
+			.."{\n"
+			.."    margin:0;\n"
+			.."    padding:5px 10px\n"
+			.."}\n"
+			.."\n"
+			.."span.keyword\n"
+			.."{\n"
+			.."    color: #00F;\n"
+			.."}\n"
+			.."\n"
+			.."span.comment\n"
+			.."{\n"
+			.."    color: #080;\n"
+			.."}\n"
+			.."\n"
+			.."span.quote\n"
+			.."{\n"
+			.."    color: #F00;\n"
+			.."}\n"
+			.."\n"
+			.."span.squote\n"
+			.."{\n"
+			.."    color: #F0F;\n"
+			.."}\n"
+			.."\n"
+			.."span.sign\n"
+			.."{\n"
+			.."    color: #008B8B;\n"
+			.."}\n"
+			.."\n"
+			.."span.line_number\n"
+			.."{\n"
+			.."    color: #808080;\n"
+			.."}\n"
+			.."\n"
+			.."@media print\n"
+			.."{\n"
+			.."    #navigation {display: none;}\n"
+			.."    #content    {padding: 0px;}\n"
+			.."    #content a  {text-decoration: underline;}\n"
+			.."}\n" )
 
 			CssfileVar:close()
 
@@ -484,7 +485,7 @@ function GenerateDocStart(dest_doc, src_name, name, dest_name, charset)
  *   o charset   --  the charset to be used for the file.
  * SOURCE
  ]]
-	if(course_of_action.do_headless) then
+	if(document.action.do_headless) then
 		-- The user wants a headless document, so we skip everything
         -- upto and until <BODY>
 	else
@@ -722,7 +723,7 @@ function GenerateIndexShortcuts(dest_doc)
 		dest_doc:write("<a href=\"#"..("").char(c).."\">")
 		GenerateChar(dest_doc, ""..c)
 		dest_doc:write("</a>")
-		if (c != 9)
+		if (c ~= 9) then
 			dest_doc:write(" - ")
 		end
 	end
@@ -775,7 +776,7 @@ end
  *   in a completely different directory.
  * SYNOPSIS
  ]]
-function relativeAddress(thisname,thatname)
+ function relativeAddress(thisname,thatname)
 	--[[
  * EXAMPLE
  *   The following two
@@ -804,18 +805,55 @@ function relativeAddress(thisname,thatname)
  * SOURCE
  ]]
 	local relative = ""
-	relative[0] = '\0'
+	local i_this_slash = ""
+	local i_that_slash = ""
+	local thisLen = string.len(thisname)
+    local thatLen = string.len(thatname)
+    
+    for i=1, math.min(thisLen,thatLen) do
+		if( string.sub(thisname,i,i) == string.sub(thatname,i,i)) then
+			if( string.sub(thisname,i,i) == '/') then
+				i_this_slash = string.sub(thisname, i, thisLen)
+			end
+			if(	string.sub(thatname,i,i) == '/') then
+				i_that_slash = string.sub(thatname, i, thatLen)	
+            end
+        else
+            break
+        end
+	end
+	local thatSlashLen = string.len(i_that_slash)
+	local thisSlashLen = string.len(i_this_slash)
+	local thisSlashesLeft = 0
+	local thatSlashesLeft = 0
+	if( thisSlashLen > 0 and thatSlashLen > 0 ) then
+		for i_c = 2, thisSlashLen do
+			if(	string.sub(i_this_slash,i_c,i_c) == '/') then
+				thisSlashesLeft = thisSlashesLeft + 1
+			end
+		end
 
-	assert(thisname)
-	assert(thatname)
-
+		for i_c = 2, thatSlashLen do
+			if(	string.sub(i_that_slash, i_c, i_c) == '/') then
+				thatSlashesLeft = thatSlashesLeft + 1
+			end
+		end
+        local i = 0
+		if( thisSlashesLeft > 0) then
+			for i = 1, thisSlashesLeft do
+				relative = relative.."../"
+			end
+			relative = relative..string.sub(i_that_slash, 2, thatSlashLen)			
+		else
+			-- !this_slashes_left && !that_slashes_left 
+			relative = relative.."./"
+			relative = relative..string.sub(i_that_slash, 2, thatSlashLen)
+		end
+    end
 	return relative
-	
 end
 
-
 function GenerateBeginContent(dest_doc)
-
     GenerateDiv( dest_doc, "content" )
 end
 
@@ -911,18 +949,18 @@ end
 
 
 function GenerateNavBarOneFilePerHeader(document, current_doc, current_header )
-	current_filename = GetFullDocname(current_header.owner.filename)
-	target_filename = GetFullDocname(current_header.owner.filename)
-	label = GetFullname(current_header.owner.filename)
+	local current_filename = docgen.GetFullDocname(current_header.owner.filename)
+	target_filename = docgen.GetFullDocname(current_header.owner.filename)
+	label = docgen.GetFullName(current_header.owner.filename)
 	if(current_header.parent) then
-		target_filename = GetFullDocname(current_header.parent.owner.filename)
+		target_filename = docgen.GetFullDocname(current_header.parent.owner.filename)
 		label = current_header.parent.unique_name
 		label_name = current_header.parent.function_name
 		GenerateLink(current_doc, current_filename, target_filename, label, label_name, "menutiem")
 	end
 	-- FS TODO  one_file_per_header without   index is not logical
 	if( (course_of_action.do_index ) and (course_of_action.do_multidoc)) then
-		target_filename = GetSubIndexFileName(document.docroot.name, docuement.extension, current_header.htype)
+		target_filename = docgen.GetSubIndexFileName(document.docroot.name, docuement.extension, current_header.htype)
 		label_name = current_header.htype.indexName
 		GenerateLink(current_doc, current_filename, target_filename, "robo_top_of_doc", label_name, "menuitem")
 	end
@@ -933,7 +971,7 @@ function GenerateHeaderStart(dest_doc, cur_header)
 		dest_doc:write("<hr />\n")
 		GenerateLabel(dest_doc, cur_header.name)
 		dest_doc:write("<a name=\""..cur_header.unique_name.."\"></a><h2>")
-		header_type = FindHeaderType(cur_header.htype.typeCharacter)
+		header_type = docgen.FindHeaderType(cur_header.htype.typeCharacter)
 		for i=1, #cur_header.names do
 			-- If Section names only, do not print module name
 			if(i==1 and course_of_action.do_sectionsnameonly) then
@@ -951,7 +989,7 @@ function GenerateHeaderStart(dest_doc, cur_header)
 			end
 		end
 		-- Print header type (if available and not Section names only)
-		if(header_type and !(course_of_action.do_sectionsnameonly)) then
+		if(header_type and not (course_of_action.do_sectionsnameonly)) then
 			dest_doc:write(" [ ")
 			GenerateString(dest_doc, header_type.indexName)
 			dest_doc:write(" ] ")
@@ -978,16 +1016,79 @@ function GenerateIndexMenu(dest_doc, filename, document, cur_type )
 	GenerateLink(dest_doc, filename, TOCIndexFilename(document), "top", "Table of Contents", "menuitem")
 	dest_doc:write("\n")
 	for type_char = MIN_HEADER_TYPE,MAX_HEADER_TYPE do
-		header_type = RB_FindHeaderType(type_char)
+		header_type = header_tyep_lookup_table[type_char] --TODO-- 	have to create header type lookup table.
 		if(header_type) then
-			local n = NumberOfLinks(header_type, nil, false) + NumberOfLinks(header_type,	nil, true)
-			if ( n ) then
-				targetfilename = GetSubIndexFileName(document.docroot.name,document.ext,header_type)
-				assert(targetfilename)
-				GenerateLink(dest_doc, filename, targetfilename, "top", header_type.indexName, "menuitem")
-				dest_doc:write("\n")
-			end			
+			targetfilename = GetSubIndexFileName(document.docroot.name,document.ext,header_type)
+			GenerateLink(dest_doc, filename, targetfilename, "top", header_type.indexName, "menuitem")
+			dest_doc:write("\n")		
 		end
+	end
+end
+
+--[[***f* HTML_Generator/RB_HTML_Generate_TOC_Section
+ * FUNCTION
+ *   Create a table of contents based on the hierarchy of
+ *   the headers starting for a particular point in this
+ *   hierarchy (the parent).
+ * SYNOPSIS
+ ]]
+function GenerateTOCSection(dest_doc, dest_name, parent, headers, count, depth)
+ --[[* INPUTS
+ *   o dest_doc  -- the file to write to.
+ *   o dest_name -- the name of this file.
+ *   o parent    -- the parent of the headers for which the the
+ *                  current level(depth) of TOC is created.
+ *   o headers   -- an array of headers for which the TOC is created
+ *   o count     -- the number of headers in this array
+ *   o depth     -- the current depth of the TOC
+ * NOTES
+ *   This is a recursive function and tricky stuff.
+ * SOURCE
+ ]]
+	sectiontoc_counters = {}
+	for i=1, MAX_SECTION_DEPTH do
+		sectiontoc_counters[i] = 0
+	end
+	-- List item start
+	dest_doc:write("<li>")
+
+	-- Do not generate section numbers if do_sectionsnameonly
+	if( not course_of_action.do_sectionsnameonly) then
+		for i=1, depth do 
+			dest_doc:write(sectiontoc_counters[i]..".")
+		end
+		dest_doc:write(" ")
+	end
+	local var
+	if(course_of_action.do_sectionsnameonly) then
+		var = parent.function_name
+	else
+		var = parent.name
+	end
+	GenerateLink(dest_doc, dest_name, file_name, parent.unique_name,var,0)
+
+	-- Generate links to further reference names
+	for n=1, parent.no_names do
+		GenerateString(dest_doc, ", ")
+		GenerateLink(dest_doc, dest_name, parent.file_name, parent.unique_name, parent.names[n], 0)
+	end
+	dest_doc:write("</li>\n");
+   
+	once = false
+	for i=1, count do
+		header = headers[i]
+		if(header.parent == parent) then
+			if(once == false ) then
+				once = true
+				dest_doc:write("<ul>\n")
+			end
+			GenerateTOCSection(dest_doc, dest_name, header,headers, count, depth + 1)
+		else
+
+		end
+	end
+	if(once == true) then
+		dest_doc:write("</ul>\n")
 	end
 end
 
@@ -1011,7 +1112,8 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
  *               in which case all headers are included.
  * SOURCE
  ]]
-	for i=0,MAX_SECTION_DEPTH do  --todo------------
+	sectiontoc_counters = {}
+	for i=1,MAX_SECTION_DEPTH do  --todo------------
 		sectiontoc_counters[i]= 0;
 	end
 	dest_doc:write("<h3>TABLE OF CONTENTS</h3>\n")
@@ -1020,7 +1122,7 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
          * hierarchy of the headers.
 		 ]]
 		dest_doc:write("<ul>\n")
-		for i=0, count do
+		for i=1, count do
 			header = headers[i]
 			if(owner == nil) then
 				if(header.parent) then
@@ -1067,7 +1169,7 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
 				for j=0, #header.no_names do
 					dest_doc:write("<li>")
 					GenerateLink(dest_doc, header.filename, header.unique_name, header.names[j], 0)
-					dest_doc:write(<"</li>\n")
+					dest_doc:write("</li>\n")
 				end
 			end
 		end
@@ -1094,7 +1196,7 @@ function GenerateLabel(dest_doc, name )
 	local len = strlen(name)
 	dest_doc:write("<a name=\"")
 	for i=0, len do
-		c = name[i]
+		c = string.sub(name,i,i)
 		--- todo ----
 		if(utf8_isalnum(c)) then
 			GenerateChar(dest_doc,c)
@@ -1107,9 +1209,9 @@ function GenerateLabel(dest_doc, name )
 end
 
 function GenerateNavBar(dcument, current_doc, current_header)
-	current_filename = GetFullDocname(current_header.owner.filename)
-	target_filename = GetFullDocname(current_header.owner.filename)
-	label = GetFullname(current_header.owner.filename)
+	current_filename = docgen.GetFullDocname(current_header.owner.filename)
+	target_filename = docgen.GetFullDocname(current_header.owner.filename)
+	label = docgen.GetFullName(current_header.owner.filename)
 	-- Then navigation bar
 	current_doc:write("<p>")
 	current_doc:write("[ ")
@@ -1119,7 +1221,7 @@ function GenerateNavBar(dcument, current_doc, current_header)
 	-- [ "Parentname" ]
 	if( current_header.parent) then
 		current_doc:write("[ ")
-		target_filename = GetFullDocname(current_header.parent.owner.filename)
+		target_filename = docgen.GetFullDocname(current_header.parent.owner.filename)
 		label = current_header.parent.unique_name
 		label_name = current_header.parent.function_name
 		GenerateLink(current_doc, current_filename, target_filename, label, label_name, 0)
@@ -1152,4 +1254,48 @@ function GenerateDocEnd(dest_doc, name, src_name)
 	else
 		dest_doc:write("</body>\n</html>\n")
 	end
+end
+
+--[[***f* HTML_Generator/RB_HTML_Generate_Label
+ * FUNCTION
+ *   Generate a label (name) that can be refered too.
+ *   A label should consist of only alphanumeric characters so
+ *   all 'odd' characters are replaced with their ASCII code in
+ *   hex format.
+ * SYNOPSIS
+ ]]
+function GenerateLabel(dest_doc, name)
+--[[
+ * INPUTS
+ *   o dest_doc -- the file to write it to.
+ *   o name     -- the name of the label.
+ * SOURCE
+ ]]
+	dest_doc:write("<a name=\"")
+	for i=1, #name do
+		c = string.sub(name,i,i)
+		----TODO------- 
+		if(IsAlphaNumeric(c)) then
+			GenerateChar(dest_doc, c)
+		else
+
+		end
+	end
+	dest_doc:write("\"></a>\n")
+end
+
+--[[x**f* HTML_Generator/RB_HTML_Generate_Header_End
+ * NAME
+ *   RB_HTML_Generate_Header_End --
+ ******
+ ]]
+ function GenerateHeaderEnd(dest_doc)
+	dest_doc:write("\n")
+ end
+
+
+function TimeStamp(dest_doc)
+	dest_doc:write(os.date())
+end
+
 end
