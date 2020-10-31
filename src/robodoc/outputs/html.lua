@@ -995,6 +995,7 @@ function GenerateHeaderStart(dest_doc, cur_header)
 			dest_doc:write(" ] ")
 		end
 		dest_doc:write("</h2>\n\n")
+	end
 end
 
 --[[***f* HTML_Generator/RB_HTML_Generate_IndexMenu
@@ -1177,36 +1178,6 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
 	end
 end
 
---[[***f* HTML_Generator/RB_HTML_Generate_Label
- * FUNCTION
- *   Generate a label (name) that can be refered too.
- *   A label should consist of only alphanumeric characters so
- *   all 'odd' characters are replaced with their ASCII code in
- *   hex format.
- * SYNOPSIS
- ]]
-function GenerateLabel(dest_doc, name )
---[[
- * INPUTS
- *   o dest_doc -- the file to write it to.
- *   o name     -- the name of the label.
- * SOURCE
- ]]
-
-	local len = strlen(name)
-	dest_doc:write("<a name=\"")
-	for i=0, len do
-		c = string.sub(name,i,i)
-		--- todo ----
-		if(utf8_isalnum(c)) then
-			GenerateChar(dest_doc,c)
-		else
-			----todo---
-
-		end
-	end
-	dest_doc:write("\"></a>\n")
-end
 
 function GenerateNavBar(dcument, current_doc, current_header)
 	current_filename = docgen.GetFullDocname(current_header.owner.filename)
@@ -1296,6 +1267,4 @@ end
 
 function TimeStamp(dest_doc)
 	dest_doc:write(os.date())
-end
-
 end

@@ -1,6 +1,6 @@
 
-local globals = require("robodoc.globals")
-globals.html = require("robodoc.outputs.html")
+local globals = require("globals")
+globals.html = require("outputs.html")
 
 local string = string
 local table = table
@@ -20,24 +20,24 @@ end
 -- TODO Documentation */
 function GenerateFalseLink(dest_doc, name )
     --Todo Ducumentation
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateFalseLink( dest_doc, name )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateFalseLink( dest_doc, name )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             HTMLGenerateFalseLink( dest_doc, name )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateFalseLink( dest_doc, name )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateFalseLink( dest_doc, name )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             ASCIIGenerateFalseLink( dest_doc, name )
         end,
         ['TROFF'] = function()
@@ -67,24 +67,24 @@ end
  * SOURCE
  ]]
 
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateItemBegin( dest_doc )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateItemBegin( dest_doc )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             HTMLGenerateItemBegin( dest_doc, name )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateItemBegin( dest_doc )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateItemBegin( dest_doc )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             RTFGenerateItemBegin( dest_doc )
         end,
         ['TROFF'] = function()
@@ -114,24 +114,24 @@ function Generate_Label(dest_doc, name )
  *   * output_mode -- global with the current output mode
  * SOURCE
  ]]
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateLabel( dest_doc, name )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateLabel( dest_doc, name )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             HTMLGenerateLabel( dest_doc, name )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateLabel( dest_doc, name )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateLabel( dest_doc, name )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             -- Doesn't apply */
         end,
         ['TROFF'] = function()
@@ -159,28 +159,28 @@ end
 ]]
 
 function GenerateItemEnd(dest_doc, name )
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateItemEnd( dest_doc )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateItemEnd( dest_doc );
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             HTMLGenerateItemEnd( dest_doc, name );
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
                 if ( piping == false ) then
                     fprintf( dest_doc, "\\begin{verbatim}\n" );  ----------------------------------take care
                     piping = true;
                 end
         RB_LaTeX_Generate_Item_End( dest_doc );
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTF_Generate_Item_End( dest_doc );
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             RB_ASCII_Generate_Item_End( dest_doc );
         end,
         ['TROFF'] = function()
@@ -212,24 +212,24 @@ end
 
 function RB_Get_Default_Extension(doctype )
     local extension = nil
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             extension = RB_TEST_Get_Default_Extension(  )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             extension = RB_XMLDB_Get_Default_Extension(  )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             extension = RB_HTML_Get_Default_Extension(  )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             extension = RB_RTF_Get_Default_Extension(  )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             extension = RB_RTF_Get_Default_Extension(  )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             extension = RB_ASCII_Get_Default_Extension(  )
         end,
         ['TROFF'] = function()
@@ -264,24 +264,24 @@ end
 ]]
 
 function GenerateBeginSection(dest_doc, depth, name, header, srcRoot)
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateBeginSection( dest_doc, depth, name )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateBeginSection( dest_doc, depth, name, header, srcRoot )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             HTMLGenerateBeginSection( dest_doc, depth, name, header )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateBeginSection( dest_doc, depth, name, header )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateBeginSection( dest_doc, depth, name )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             ASCIIGenerateBeginSection( dest_doc, depth, name, header )
         end,
         ['TROFF'] = function()
@@ -312,24 +312,24 @@ end
 ]]
 
 function GenerateEndSection(dest_doc, depth, name )
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateEndSection( dest_doc, depth, name )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateEndSection( dest_doc, depth, name )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             HTMLGenerateEndSection( dest_doc, depth, name )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateEndSection( dest_doc, depth, name )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateEndSection( dest_doc, depth, name )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             HTMLGenerateEndSection( dest_doc, depth, name )   -----------HTT---------
         end,
         ['TROFF'] = function()
@@ -384,20 +384,20 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name )
  *               in which case all headers are included.
  * SOURCE
 ]]
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
             HTMLGenerateTOC2( dest_doc, headers, count, owner, dest_name )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateTOC2( dest_doc, headers, count )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
         end,
         ['TROFF'] = function()
             -- //
@@ -436,24 +436,24 @@ function  GenerateDocStart(document, DestDoc, SrcName, title, toc, dest_name, ch
  *   RB_Generate_Doc_End
  * SOURCE
  ]]
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateDocStart(DestDoc, SrcName, title, toc)
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateDocStart( document, DestDoc, charset )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             html.GenerateDocStart( DestDoc, SrcName, title, dest_name,charset )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateDocStart( DestDoc, SrcName, title, charset )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateDocStart( DestDoc, SrcName, title, toc )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             ASCIIGenerateDocStart( DestDoc, SrcName, title, toc )
         end,
         ['TROFF'] = function()
@@ -492,24 +492,24 @@ function GenerateDocEnd(DestDoc, name, SrcName )
  * BUGS
  * SOURCE
  ]]
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateDocEnd(DestDoc, name);
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateDocEnd( document, name );
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             html.GenerateDocEnd( DestDoc, name, SrcName );
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateDocEnd( DestDoc, name );
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             -- RTFGenerateDocEnd( DestDoc,);
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
            -- ASCIIGenerateDocEnd( DestDoc, );
         end,
         ['TROFF'] = function()
@@ -545,24 +545,24 @@ function GenerateHeaderStart(dest_doc, cur_header,srcRoot)
  *   RB_Generate_Header_End
  * SOURCE
  ]]
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateHeaderStart(DestDoc, cur_header);
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateHeaderStart( document, cur_header, srcRoot );
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             html.GenerateHeaderStart( DestDoc, cur_header );
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateHeaderStart( DestDoc, cur_header );
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateHeaderStart( dest_doc, cur_header );
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             ASCIIGenerateHeaderStart( dest_doc, cur_header );
         end,
         ['TROFF'] = function()
@@ -601,24 +601,24 @@ function GenerateHeaderEnd(dest_doc, cur_header )
  *   RB_Generate_BeginSection
  * SOURCE
 ]]
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateHeaderEnd( dest_doc, cur_header )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateHeaderEnd( dest_doc, cur_header )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             html.GenerateHeaderEnd( dest_doc, cur_header )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateHeaderEnd( dest_doc, cur_header )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateHeaderEnd( dest_doc, cur_header )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             ASCIIGenerateHeaderEnd( dest_doc, cur_header )
         end,
         ['TROFF'] = function()
@@ -653,24 +653,24 @@ function GenerateItemName(dest_doc, item_type )
  * SOURCE
 ]]
     local name = configuration.items.name[item_type]
-    local switch = { 
-        ['TEST'] = function()	
+    local switch = {
+        ['TEST'] = function()
             TESTGenerateItemName( dest_doc, name )
         end,
-        ['XMLDB'] = function()	
+        ['XMLDB'] = function()
             XMLDBGenerateItemName( dest_doc, name )
         end,
-        ['HTML'] = function()	
+        ['HTML'] = function()
 
             HTMLGenerateItemName( dest_doc, name )
         end,
-        ['LaTeX'] = function()  
+        ['LaTeX'] = function()
             LaTeXGenerateItemName( dest_doc, name )
         end,
-        ['RTF'] = function()  
+        ['RTF'] = function()
             RTFGenerateItemName( dest_doc, name )
         end,
-        ['ASCII'] = function()  
+        ['ASCII'] = function()
             ASCIIGenerateItemName( dest_doc, name )
         end,
         ['TROFF'] = function()
@@ -687,10 +687,10 @@ function GenerateItemName(dest_doc, item_type )
 end
 
 function GenerateBeginContent(dest_doc )
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             HTMLGenerateBeginContent( dest_doc )
-        end, 
+        end,
     }
 
     local f = switch[output_mode]
@@ -702,10 +702,10 @@ function GenerateBeginContent(dest_doc )
 end
 
 function GenerateEndContent(dest_doc )
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             html.GenerateEndContent( dest_doc )
-        end, 
+        end,
     }
 
     local f = switch[output_mode]
@@ -717,10 +717,10 @@ function GenerateEndContent(dest_doc )
 end
 
 function GenerateBeginNavigation(dest_doc )
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             html.GenerateBeginNavigation( dest_doc )
-        end, 
+        end,
     }
 
     local f = switch[output_mode]
@@ -732,10 +732,10 @@ function GenerateBeginNavigation(dest_doc )
 end
 
 function GenerateEndNavigation(dest_doc )
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             html.GenerateEndNavigation( dest_doc )
-        end, 
+        end,
     }
 
     local f = switch[output_mode]
@@ -747,10 +747,10 @@ function GenerateEndNavigation(dest_doc )
 end
 
 function GenerateIndexMenu(dest_doc, filename, document )
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             html.GenerateIndexMenu( dest_doc, filename, document, nil )
-        end, 
+        end,
     }
 
     local f = switch[output_mode]
@@ -763,10 +763,10 @@ end
 
 
 function GenerateBeginExtra(dest_doc )
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             html.GenerateBeginExtra( dest_doc )
-        end, 
+        end,
     }
 
     local f = switch[output_mode]
@@ -778,10 +778,10 @@ function GenerateBeginExtra(dest_doc )
 end
 
 function Generate_End_Extra(dest_doc )
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             HTMLGenerateEndExtra( dest_doc )
-        end, 
+        end,
     }
 
     local f = switch[output_mode]
@@ -800,13 +800,13 @@ function GenerateIndex(document )
  *   "objects" found in the source files.
  * SOURCE
 ]]
-    local switch = { 
-        ['HTML'] = function()	
+    local switch = {
+        ['HTML'] = function()
             HTMLGenerateEndExtra( dest_doc )
-        end, 
-        ['LATEX'] = function()	
+        end,
+        ['LATEX'] = function()
             --Latex has a index by default
-        end, 
+        end,
 
     }
 
@@ -825,8 +825,8 @@ end
  *   configuration.ignore_items.
  * SYNOPSIS
  ]]
- function GenerateHeader(f, header, docname)
-    --[[
+function GenerateHeader(f, header, docname)
+--[[
  * INPUTS
  *   * f -- destination file
  *   * header -- header to be searched.
@@ -836,11 +836,11 @@ end
  *   This skips the first item body if the first item name was
  *   not correctly spelled.
  * SOURCE
- ]]
+]]
     for cur_item = 1, #header.items do
         if (false) then  -- condition = Is_Ignore_Item( name )
             --User does not want this item
-        else if (false) then --condition = Works_Like_SourceItem( item_type )
+        elseif (false) then --condition = Works_Like_SourceItem( item_type )
             --User does not want source items
         else
             GenerateItem(f, header, cur_item, docname)
@@ -848,30 +848,244 @@ end
     end
 end
 
+
 --[[***f* Generator/Generate_Item
  * SYNOPSIS
  ]]
 function GenerateItem(f, header, cur_item, docname)
 
 --[[ FUNCTION
-  *   Generate the documentation for a single item.
-  *
-  * NOTE
-  *   This function is way too long...
-  *
-  * SOURCE
-  ]]
-  GenerateItemName(f, item_type)
-  GenerateItemBegin(f, name)
-  --TODO-----
+    *   Generate the documentation for a single item.
+    *
+    * NOTE
+    *   This function is way too long...
+    *
+    * SOURCE
+    ]]
+    local dot_nr = 1
+    local tool = nil
+    item_type = cur_item.type
+    GenerateItemName(f, item_type)
+    GenerateItemBegin(f, name)
+    for line_nr = 1, #cur_item.no_lines do
+        local item_line = cur_item.lines[line_nr]
+        local line = item_line.line
+        --Plain item lines
+        if((WorksLikeSourceItem(item_type)==false) and item_line.kind == "ITEM_LINE_PLAIN") then
+            FormatLine(f, item_line.format)
+            GenerateItemLine(f, line, item_type, docname, header)
+        --Last line 
+        elseif (item_line.kind == "ITEM_LINE_END") then
+            FormatLine(f, item_line.format)
+        --Normal Pipes
+        elseif ((WorksLikeSourceItem(item_type)==false) and item_line.kind == "ITEM_LINE_PIPE") then
+            FormatLine(f, item_line.format)
+            -------TODO output mode -------
+            if( item_line.pipe_mode == output_mode) then
+                Pipe_Line(f, line)
+            end 
+        -- Tool start
+        elseif((WorksLikeSourceItem(item_type)==false) and item_line.kind == "ITEM_LINE_TOOL_START") then
+            FormatLine(f, item_line.format)
+
+            --Chnage to docdir
+            ChangeToDocdir(docname)
+            
+            --Open pipe to tool 
+            tool = OpenPipe(line)
+
+            -- Get back to working dir 
+            ChangeBackToCWD()
+        
+        -- Tool (or DOT) body
+        elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_TOOL_BODY") then
+            FormatLine(f, item_line.format)
+
+            -- Get DOT file type 
+            if ( tool ~= nil ) then
+                tool:write(line.."\n")
+            end
+        -- Tool end
+        elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_TOOL_END") then
+            ClosePipe(tool)
+            tool = nil
+        
+        -- DOT start 
+        elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_DOT_START") then
+            FormatLine(f, item_line.format)
+            dot_type = GetDOTType()
+            
+            if(dot_type) then
+                local pipe_str = ""
+                ChangeToDocdir(docname)
+                --TODO--
+                tool = OpenPipe(pipe_str)
+            end
+        
+        -- DOT end 
+        elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_DOT_END") then
+            if(tool ~= nill) then
+                --Close pipe
+                ClosePipe(tool)
+                tool = nil
+
+                --Generate link to image
+                GenerateDOTImageLink(f,dot_nr, dot_type)
+
+                --Get back to working dir
+                ChangeBackToCWD()
+
+                --Increment dot file number 
+                dot_nr = dot_nr + 1
+            end
+        
+        -- DOT file include 
+        elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_DOT_FILE") then
+            FormatLine(f, item_line.format)
+
+            --Get DOT file type
+            dot_type = GetDOTType()
+
+            if(dot_type) then
+                --TODO--
+            end
+
+        --Exec item
+        elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_EXEC") then
+            FormatLine(f, item_line.format)
+            
+            --Change to docdir 
+            ChangeTODocdir(document)
+            
+            --EXecute line 
+            system(line)
+
+            -- Get back to working dir  
+            ChangeBackToCWD()
+        
+        -- Source linses
+        elseif (WorksLikeSourceItem(item_type)==true) then
+            FormatLine(f, item_line.format)
+
+            --Generate line numbers for SOURCE like items
+            GenerateItemLineNumber(f, item_line.line_number, cur_item.max_line_number)
+            
+            --Generate item line
+            GenerateItemLine(f, line, item_type, docname, header)
+        else
+            -- This item line is ignored
+        end
+
+        
+    end
+    GenerateItemEnd(f, name)
 
 end
 
+function FormatLine(dest_doc, format)
+    if ( format and RBILA_END_LIST_ITEM ) then
+         Generate_End_List_Item( dest_doc )
+    end
+    if ( format and RBILA_END_LIST ) then
+        Generate_End_List( dest_doc )
+    end
+
+    if ( format and RBILA_END_PRE ) then
+
+        Generate_End_Preformatted( dest_doc )
+    end
+    if ( format and RBILA_BEGIN_PARAGRAPH ) then
+
+        Generate_Begin_Paragraph( dest_doc )
+    end
+    if ( format and RBILA_END_PARAGRAPH ) then
+        Generate_End_Paragraph( dest_doc )
+    end
+    if ( format and RBILA_BEGIN_PRE ) then
+
+        Generate_Begin_Preformatted( dest_doc,( format & RBILA_BEGIN_SOURCE ) )
+    end
+    if ( format and RBILA_BEGIN_LIST ) then
+
+        GenerateBeginList( dest_doc )
+    end
+    if ( format and RBILA_BEGIN_LIST_ITEM ) then
+
+        GenerateBeginListItem( dest_doc );
+    end
+
+end
+
+function GenerateBeginList(document )
+    html.GenerateBeginList(dest_doc)
+end
+
+function GenerateEndList(dest_doc)
+    html.GenerateEndList(dest_doc)
+end
+
+function GenerateBeginPreformatted(dest_doc)
+    html.GenerateBeginPreformatted(dest_doc)
+end
+
+function GenerateEndPreformatted(dest_doc, source)
+    html.GenerateEndPreformatted(dest_doc, source)
+end
+
+function GenerateEndParagraph(dest_doc)
+    html.GenerateEndParagraph(dest_doc)
+end
+
+function GenerateBeginParagraph(dest_doc)
+    html.GenerateBeginParagraph(dest_doc)
+end
+
+
+
+--[[***f* Generator/RB_Generate_Part
+ * FUNCTION
+ *   Generate the documention for all the headers found in a single
+ *   source file.
+ * SYNOPSIS
+ ]]
+function GeneratePart(document_file, document, part)
+    --[[
+     * INPUTS
+     *   * document_file -- The file were it stored.
+     *   * document      -- All the documentation.
+     *   * part          -- pointer to a RB_Part that contains all the headers found
+     *                    in a single source file.
+     * SOURCE
+    ]]
+        logger:info("Generating documentation for file ",srcname)
+        if( document.actions.do_singledoc) then
+            docname = document.singledoc_name
+        elseif document.actions.do_multidoc then
+            docname = document.parts.srcfile.path..document.parts.srcfile.file
+        elseif document.actions.do_singlefile then
+            docname = document.singledoc_name
+        else
+         -----------
+        end
+
+        -------Troff Mode -------
+
+        for i_header = 0, #part.headers do
+            logger:info("generating documentation for header",part.headers[i_header].name)
+            document_file = generator.GenerateHeaderStart(document_file, part.headers[i_header],document.srcroot.name)
+            generator.GenerateNavBar(document, document_file, part.headers[i_header])
+            --RB_html_Generate_index_entry is not availabe in robodoc
+            --generator.GenerateIndexEntry(document_file, document.doctype, part.headers[i_header])
+            generator.GenerateHeader(document_file, part.headers[i_header], docname)
+            generator.GenerateHeaderEnd(document_file, part.headers[i_header])
+        end
+end
+
 function GenerateNavBar(document, current_doc, current_header)
-    local switch = { 
-        ['HTML'] = function()	
-            GenerateNavBar( dest_doc )
-        end, 
+    local switch = {
+        ['HTML'] = function()
+            html.GenerateNavBar( dest_doc )
+        end,
     }
 
     local f = switch[output_mode]

@@ -1017,12 +1017,12 @@ local function genMultiDoc(document)
 				generator.GenerateTOC2(document_file,document.headers,document.no_headers,document.parts[i],docname)
 			end
 
-			GeneratePart(document_file, document, i_part)
+			generator.GeneratePart(document_file, document, i_part)
 			generator.GenerateEndContent(document_file)
 			generator.GenerateDocEnd(document_file,docname,srcname)
 			document_file:close()
 		else
-			GeneratePart(document_file, document, i_part)
+			generator.GeneratePart(document_file, document, i_part)
 		end
 
 	end
@@ -1030,45 +1030,6 @@ local function genMultiDoc(document)
 		generator.GenerateIndex(document)
 	end
 end
-
---[[***f* Generator/RB_Generate_Part
- * FUNCTION
- *   Generate the documention for all the headers found in a single
- *   source file.
- * SYNOPSIS
- ]]
-function GeneratePart(document_file, document, part)
---[[
- * INPUTS
- *   * document_file -- The file were it stored.
- *   * document      -- All the documentation.
- *   * part          -- pointer to a RB_Part that contains all the headers found
- *                    in a single source file.
- * SOURCE
-]]
-	logger:info("Generating documentation for file ",srcname)
-	if( document.actions.do_singledoc) then
-		docname = document.singledoc_name
-	else if document.actions.do_multidoc then
-		docname = document.parts.srcfile.path..document.parts.srcfile.file
-	else if document.actions.do_singlefile then
-		docname = document.singledoc_name
-	else
-	 -----------
-	end
-	-------Troff Mode -------
-
-	for i_header = 0, #part.headers do 
-		logger:info("generating documentation for header",part.headers[i_header].name)
-		document_file = generator.GenerateHeaderStart(document_file, part.headers[i_header],document.srcroot.name)
-		generator.GenerateNavBar(document, document_file, part.headers[i_header])
-		--RB_html_Generate_index_entry is not availabe in robodoc
-		--generator.GenerateIndexEntry(document_file, document.doctype, part.headers[i_header])
-		generator.GenerateHeader(document_file, part.headers[i_header], docname)
-		generator.GenerateHeaderEnd(document_file, part.headers[i_header])
-	end
-end
-
 
 function docgen(document)
 	sourceExt = document.srcextension
