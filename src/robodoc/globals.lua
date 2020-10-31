@@ -4,6 +4,7 @@ local lfs = require("lfs")
 
 local type = type
 local setmetatable = setmetatable
+local io = io
 
 local M = {}
 package.loaded[...] = M

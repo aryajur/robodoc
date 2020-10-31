@@ -5,8 +5,8 @@ local tu = require("tableUtils")
 local globals = require("robodoc.globals")
 local logger = globals.logger
 local config = globals.configuration
-local html = require("robodoc.outputs.html")
-local generator = require("generator")
+local html = globals.html
+local generator = require("robodoc.generator")
 
 local table = table
 local tonumber = tonumber

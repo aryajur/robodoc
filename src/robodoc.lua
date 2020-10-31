@@ -1,4 +1,5 @@
 -- Robodoc translation to Lua
+require("submodsearcher")
 
 local globals = require("robodoc.globals")
 -- Collection of all globals
@@ -12,13 +13,13 @@ configuration = nil		-- configuration of the run
 ]]
 
 -- Use the Lua Logging library for logging messages
-local log_console = require"logging.console"
+local log_console = require"logging.console"				-- https://github.com/lunarmodules/lualogging
 
 local logger = log_console()
 globals.logger = logger
 logger:setLevel("INFO")
 
-local tu = require("tableUtils")
+local tu = require("tableUtils")			-- https://github.com/aryajur/tableUtils
 -- Using argparse module https://github.com/luarocks/argparse
 local ap = require("argparse")
 local parser = ap()	-- Create a parser

@@ -17,7 +17,7 @@ local globals = require("robodoc.globals")
 local docformats = globals.docformats
 local logger = globals.logger
 local os = os
-local docgen = require("docgen")
+local docgen = require("robodoc.docgen")
 local bool = bool
 
 local M = {}
@@ -34,7 +34,7 @@ docformats[#docformats + 1] = {
 }
 
 -- Setup the arguments in the commandline
-globals.parser.option("--css","Specify the stylesheet to use.")
+globals.parser:option("--css","Specify the stylesheet to use.")
 	:args(1)
 	:convert(globals.fileExists)
 

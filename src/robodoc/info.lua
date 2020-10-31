@@ -95,9 +95,9 @@ parser:flag("--source_line_numbers","Display original source line numbers for SO
 parser:flag("--altlatex","Alternate LaTeX file format (bigger / clearer than normal)")
 parser:flag("--latexparts",help="Make the first module level as PART in LaTeX output")
 ]]
-parser.option("--charset","Add character encoding information."):args(1)
-parser.option("--ext","Set extension for generated files."):args(1)
-parser.option("--srcext","Set extension for source files."):args("+"):count(1)
+parser:option("--charset","Add character encoding information."):args(1)
+parser:option("--ext","Set extension for generated files."):args(1)
+parser:option("--srcext","Set extension for source files."):args("+"):count(1)
 -- The css option is removed from here since html will manage it
 --parser.option("--css","Specify the stylesheet to use."):convert(io.open):args(1)
 -- The following option for troff was removed. The troff exporter should handle it

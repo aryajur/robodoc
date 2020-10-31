@@ -1,6 +1,5 @@
 
-local globals = require("globals")
-globals.html = require("outputs.html")
+local globals = require("robodoc.globals")
 
 local string = string
 local table = table
