@@ -1,4 +1,5 @@
 -- Robodoc translation to Lua
+
 require("submodsearcher")
 
 local globals = require("robodoc.globals")
@@ -26,7 +27,7 @@ local parser = ap()	-- Create a parser
 globals.parser = parser
 
 local docformats = {
-	-- { name = "html",ext="html"}
+	{ name = "html",ext="html"}
 }
 globals.docformats = docformats
 
@@ -39,7 +40,6 @@ logger:info(string.rep("-",50))
 
 -- Import all document exporters here they wll setup and fill the docformats array
 globals.html = require("robodoc.outputs.html")
-
 -- Setup the docformat options here
 do
 	local formats = {}
@@ -70,8 +70,8 @@ end
 globals.args = args
 
 -- Find the doctype
-local doctype = tu.inArray(docformats,args,function(one,two) return two[one] end)
-
+--local doctype = tu.inArray(docformats,args,function(one,two) return two[one] end)
+doctype = 1
 local document = {
 	document_title = args.documenttitle,
 	doctype = doctype,
@@ -110,5 +110,6 @@ function generateDocumentation()
 	docgen.docgen(document)
 end
 
+generateDocumentation()
 
 

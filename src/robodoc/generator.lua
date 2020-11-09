@@ -16,6 +16,7 @@ else
 	_ENV = M		-- Lua 5.2
 end
 
+function strcmp(a,b) return a==b end
 -- TODO Documentation */
 function GenerateFalseLink(dest_doc, name )
     --Todo Ducumentation
@@ -28,7 +29,7 @@ function GenerateFalseLink(dest_doc, name )
         end,
         ['HTML'] = function()
 
-            HTMLGenerateFalseLink( dest_doc, name )
+            html.GenerateFalseLink( dest_doc, name )
         end,
         ['LaTeX'] = function()
             LaTeXGenerateFalseLink( dest_doc, name )
@@ -58,7 +59,7 @@ end
  *   preformatted output mode, similar to HTML's <PRE>.
  * SYNOPSIS
  ]]
- function RB_Generate_Item_Begin(dest_doc, name )
+ function GenerateItemBegin(dest_doc, name )
 --[[
  * INPUTS
  *   dest_doc -- file to be written to
@@ -74,8 +75,8 @@ end
             XMLDBGenerateItemBegin( dest_doc )
         end,
         ['HTML'] = function()
-
-            HTMLGenerateItemBegin( dest_doc, name )
+            --No need
+            --html.GenerateItemBegin( dest_doc, name )
         end,
         ['LaTeX'] = function()
             LaTeXGenerateItemBegin( dest_doc )
@@ -661,7 +662,7 @@ function GenerateItemName(dest_doc, item_type )
         end,
         ['HTML'] = function()
 
-            HTMLGenerateItemName( dest_doc, name )
+            html.GenerateItemName( dest_doc, name )
         end,
         ['LaTeX'] = function()
             LaTeXGenerateItemName( dest_doc, name )
@@ -873,7 +874,7 @@ function GenerateItem(f, header, cur_item, docname)
         if((WorksLikeSourceItem(item_type)==false) and item_line.kind == "ITEM_LINE_PLAIN") then
             FormatLine(f, item_line.format)
             GenerateItemLine(f, line, item_type, docname, header)
-        --Last line 
+        --Last line
         elseif (item_line.kind == "ITEM_LINE_END") then
             FormatLine(f, item_line.format)
         --Normal Pipes
@@ -882,25 +883,23 @@ function GenerateItem(f, header, cur_item, docname)
             -------TODO output mode -------
             if( item_line.pipe_mode == output_mode) then
                 Pipe_Line(f, line)
-            end 
+            end
         -- Tool start
         elseif((WorksLikeSourceItem(item_type)==false) and item_line.kind == "ITEM_LINE_TOOL_START") then
             FormatLine(f, item_line.format)
 
             --Chnage to docdir
             ChangeToDocdir(docname)
-            
-            --Open pipe to tool 
+
+            --Open pipe to tool
             tool = OpenPipe(line)
 
-            -- Get back to working dir 
+            -- Get back to working dir
             ChangeBackToCWD()
-        
+
         -- Tool (or DOT) body
         elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_TOOL_BODY") then
-            FormatLine(f, item_line.format)
-
-            -- Get DOT file type 
+            -- Get DOT file type
             if ( tool ~= nil ) then
                 tool:write(line.."\n")
             end
@@ -908,20 +907,20 @@ function GenerateItem(f, header, cur_item, docname)
         elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_TOOL_END") then
             ClosePipe(tool)
             tool = nil
-        
-        -- DOT start 
+
+        -- DOT start
         elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_DOT_START") then
             FormatLine(f, item_line.format)
             dot_type = GetDOTType()
-            
+
             if(dot_type) then
                 local pipe_str = ""
                 ChangeToDocdir(docname)
                 --TODO--
                 tool = OpenPipe(pipe_str)
             end
-        
-        -- DOT end 
+
+        -- DOT end
         elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_DOT_END") then
             if(tool ~= nill) then
                 --Close pipe
@@ -934,11 +933,11 @@ function GenerateItem(f, header, cur_item, docname)
                 --Get back to working dir
                 ChangeBackToCWD()
 
-                --Increment dot file number 
+                --Increment dot file number
                 dot_nr = dot_nr + 1
             end
-        
-        -- DOT file include 
+
+        -- DOT file include
         elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_DOT_FILE") then
             FormatLine(f, item_line.format)
 
@@ -952,30 +951,30 @@ function GenerateItem(f, header, cur_item, docname)
         --Exec item
         elseif ((WorksLikeSourceItem(item_type)==false) and item_type.kind == "ITEM_LINE_EXEC") then
             FormatLine(f, item_line.format)
-            
-            --Change to docdir 
+
+            --Change to docdir
             ChangeTODocdir(document)
-            
-            --EXecute line 
+
+            --EXecute line
             system(line)
 
-            -- Get back to working dir  
+            -- Get back to working dir
             ChangeBackToCWD()
-        
+
         -- Source linses
         elseif (WorksLikeSourceItem(item_type)==true) then
             FormatLine(f, item_line.format)
 
             --Generate line numbers for SOURCE like items
             GenerateItemLineNumber(f, item_line.line_number, cur_item.max_line_number)
-            
+
             --Generate item line
             GenerateItemLine(f, line, item_type, docname, header)
         else
             -- This item line is ignored
         end
 
-        
+
     end
     GenerateItemEnd(f, name)
 
@@ -1095,3 +1094,204 @@ function GenerateNavBar(document, current_doc, current_header)
     end
 end
 
+function GenerateItemLine(dest_doc, line, item_type, docname, fnames)
+    EIL_State = {
+        SKIP_ALPHANUM = 1,
+        SKIP_SPACE = 2,
+        SEARCH_LINK_START_WORD = 3,
+        SEARCH_LINK = 4,
+    }
+    local filename = nil
+    local state = EIL_State.SKIP_SPACE
+    for i=1, #line do
+        local char = line:sub(i,i)
+        --[[ This is a little statemachine to switch searching for
+         * links on and off.  A link can be found for a word
+         * or for a word combined with some punctuation
+         * characters.  A word is a string of alpha numeric
+         * characters (including a '_'),  say FunctionAA_10_B
+         * All other characters are punctuation characters.
+         * We do not want links to start in the middle of a word,
+         * but they can start after or on a punctuation character.
+         * So for a link can start at
+         *     Foo_bar::SnaFu
+         *     ^      ^^^
+         *     |      |||
+         *
+         ]]
+        
+         --Move to the next state based on current character. 
+        if state == EIL_State.SKIP_SPACE then
+            --[[ In this state we try to skip of a string of space
+             * characters until we find something else.
+             ]]
+            if(Ispunct(c)) then
+                --[[ we were in the process of skipping spaces,
+                     * but now we found a non-space character.
+                     * This might be the begin of a link, so
+                     * switch to the search link state.
+                ]]
+                state = EIL_State.SEARCH_LINK
+            elseif (Isalnum(c) or (c == "_")) then
+                state = EIL_State.SEARCH_LINK_START_WORD
+            else
+                --[[ Links can only start with a none space character,
+                     * so if the current charater is a space, we skip it.
+                    ]]
+            end
+        elseif state == EIL_State.SKIP_ALPHANUM then
+            --[[In this state we skipping a string of alpha
+             * numeric charaters after that the first
+             * character in this string did not result in a
+             * link.
+             ]]
+            if(Isspace(c)) then
+                state = EIL_State.SKIP_SPACE;
+            elseif (Ispunct(c) and c ~= '_') then
+                --[[We found a puntuation character, this end
+                     * the string of alpha numeric character, but
+                     * can be the begin of a new link, so we
+                     * switch to the seach link state.
+                     ]]
+                state = EIL_State.SEARCH_LINK
+            else
+                -- We stay in this state
+            end
+        elseif state == EIL_State.SEARCH_LINK_START_WORD then
+            --[[ In this state we are at the start of a string
+            * of alpha numeric characters.
+            ]]
+            if(Isalnum(c) or c == '_') then
+                --[[ We are not at the second character of
+                     * a string of alpha numeric characters,
+                     * we can stop searching for links, as a
+                     * link can only start at the begin of
+                     * such a string.
+                ]]
+                state = EIL_State.SKIP_ALPHANUM
+            elseif ( Ispunct(c) and c ~= '_') then
+                state = EIL_State.SEARCH_LINK
+            elseif Isspace(c) then
+                state = EIL_State.SKIP_SPACE
+            else
+                state = EIL_State.SKIP_SPACE
+            end
+        elseif state == EIL_State.SEARCH_LINK then
+            --[[In this state we search for links. We stop
+                 * searching if we encounter a space because this
+                 * marks end of the word,
+                 ]]
+            if( Isalnum(c) or c=='_') then
+                --We are at the start of a word.
+                state = EIL_State.SEARCH_LINK_START_WORD
+            elseif Isspace(c) then
+                state = SKIP_SPACE
+            else
+                -- We stay in this state
+            end
+        end
+
+        if( ( ( state == EIL_State.SEARCH_LINK ) or (state == EIL_State.SEARCH_LINK_START_WORD)) and FindLink(cur_char, object_name, label_name, filename)) then
+            -- We found a link, so we can stop searching for one
+             -- for now.
+            state  = EIL_State.SKIP_SPACE
+            if(object_name and fnames.no_names > 0) then
+                for i=0, fnames.no_names do
+                    if( strcm(object_name, fnames.names[i])==0) then
+                        break
+                    end
+                    if( i < fnames.no_names) then
+                        GenerateFalseLink(dest_doc, object_name)
+                        cur_char = cur_char + #object_name - 1
+                    else
+                        GenerateLink(dest_doc, docname, filename, label_name, object_name)
+                        cur_char = cur_char + #object_name - 1
+                    end
+                end
+            else
+                local tempvar
+                if(cur_char == line ) then
+                    tempvar = 0 
+                else
+                    tempvar = string.char(cur_char - 1)
+                end
+                
+                res = html.Extra(dest_doc, item_type, cur_char, tempvar)
+
+                if( res >= 0 ) then
+                    cur_char = cur_char + res
+                else
+                    GenerateChar(dest_doc, stirng.char(cur_char))
+                end
+            end
+        end
+        
+    end
+
+     --TODO Move to the RTF_Generator */
+    if(output_mode == "HTML") then
+        html.GenerateLineCommentEnd(dest_doc)
+    end
+    dest_doc:write("\n")
+end
+
+--[[***f* Generator/RB_Generate_Item_Line_Number
+ * FUNCTION
+ *   Generate line numbers for SOURCE like items
+ * SYNOPSIS
+ ]]
+function GenerateItemLineNumber(dest_doc, line_number, max_lines)
+    --[[
+    * INPUTS
+    *   o dest_doc    -- the file to write to.
+    *   o line_number -- the actual line number.
+    *   o max_lines   -- the maximal line number in this item.
+    * SOURCE
+    ]]
+    --TODO--
+end
+
+--[[***f* Generator/Generate_Link
+ * FUNCTION
+ *   Generate a link to another headers documentation.
+ * SYNOPSIS
+ ]]
+function GenerateLink(dest_doc, docname, file_name, label_name, function_name)
+    --[[
+    * INPUTS
+    *   * dest_doc      -- the output file
+    *   * docname       -- the name of the output file
+    *   * file_name     -- the name of the file that contains the link's body
+    *   * label_name    -- the label for the link
+    *   * function_name -- the name that is shown for the link in the
+    *                      documentation
+    * SOURCE
+    ]]
+    if( output_mode == "HTML") then
+        html.GenerateLink(dest_doc, docname, file_name, label_name, function_name,nil)
+    end
+end
+
+function Ispunct(c)
+    if (c < 128 and string.match(string.char(c),"%p")) then
+        return true
+    else
+        return false
+    end
+end
+
+function Isalnum(c)
+    if (c < 128 and string.match(string.char(c),"%w")) then
+        return true
+    else
+        return false
+    end
+end
+
+function Isspace(c)
+    if (c < 128 and string.match(string.char(c),"%S")) then
+        return true
+    else
+        return false
+    end
+end

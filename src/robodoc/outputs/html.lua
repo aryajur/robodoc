@@ -9,8 +9,8 @@
  *   all headertypes and seperate masterindexes for each headertype.
  *
  * MODIFICATION HISTORY
- *  
- *   
+ *
+ *
  ]]
 
 local globals = require("robodoc.globals")
@@ -53,7 +53,7 @@ end
  ]]
  course_of_action = nil
 
- 
+
 function TOCIndexFilename(document)
 	toc_index_name = "toc_index.html"
 	toc_index_path = document.docroot.name..toc_index_name
@@ -89,7 +89,7 @@ function GenerateSourceTreeEntry(dest_doc, dest_name, parent_path, srctree, docu
 			GenerateString(dest_doc, cur_path.name)
 			GenerateSourceTreeEntry(dest_doc, dest_name, cur_path, srctree, document)
 			dest_doc:write("</li>\n")
-		end	
+		end
 	end
 	dest_doc:write("</ul>\n")
 end
@@ -459,7 +459,7 @@ function createCSS(document)
 			logger:warn("can't open css file file")
 		end
 	end
-	
+
 end
 
 --[[***f* HTML_Generator/RB_HTML_Generate_Doc_Start
@@ -478,7 +478,7 @@ function GenerateDocStart(dest_doc, src_name, name, dest_name, charset)
 --[[
  * INPUTS
  *   o dest_doc  --  the output file.
- *   o src_name  --  The file or directoryname from which 
+ *   o src_name  --  The file or directoryname from which
  *                   this document is Generated.
  *   o name      --  The title for this document
  *   o dest_name --  the name of the output file.
@@ -533,7 +533,7 @@ local SOURCE_CLASS = "source"
 local LINE_NUMBER_CLASS = "line_number"
 --[[***f* HTML_Generator/RB_HTML_Generate_Div
  * FUNCTION
- *   Write a Div to the destination document 
+ *   Write a Div to the destination document
  * SYNOPSIS
  ]]
 
@@ -603,7 +603,7 @@ function GenerateChar(dest_doc, c)
  * SOURCE
  ]]
 
- 	local switch = { 
+ 	local switch = {
 		['\n'] = function()	-- for case '\n'
 			dest_doc:write("")
     	end,
@@ -620,11 +620,11 @@ function GenerateChar(dest_doc, c)
 			dest_doc:write("&amp")
 		end
 	}
-	
+
 	local f = switch[c]
 	if (f) then
 		f()
-	else    
+	else
 		dest_doc:write(c)               --for default
 	end
 end
@@ -655,7 +655,7 @@ end
  function colorString( dest_doc, open, class, a_string)
 	--[[
 	 * FUNCTION
-	 * 
+	 *
 	 * SOURCE
 	 ]]
 	if(open==0) then  -- string,closing
@@ -673,7 +673,7 @@ end
 		dest_doc:write("<span class=\""..class.."\">")
 		GenerateString(dest_doc, a_string)  -------todo--review -----
 		dest_doc:write("</span>")
-	end		 
+	end
 end
 
 --[[****f* HTML_Generator/RB_HTML_Generate_Line_Comment_End
@@ -762,7 +762,7 @@ function GenerateLink(dest_doc, cur_name,filename,labelname,linkname,classname)
 		GenerateString(cur_doc, linkname)
 		dest_doc:write("</a>")
 	else
-		dest_doc:write("href=\"#"..labelname.."\">") 
+		dest_doc:write("href=\"#"..labelname.."\">")
 		GenerateString(cur_doc, linkname)
 		dest_doc:write("</a>")
 	end
@@ -782,7 +782,7 @@ end
  *   The following two
  *     this /sub1/sub2/sub3/f.html
  *     that /sub1/sub2/g.html
- *   result in 
+ *   result in
  *     ../g.html
  *
  *     this /sub1/f.html
@@ -809,14 +809,14 @@ end
 	local i_that_slash = ""
 	local thisLen = string.len(thisname)
     local thatLen = string.len(thatname)
-    
+
     for i=1, math.min(thisLen,thatLen) do
 		if( string.sub(thisname,i,i) == string.sub(thatname,i,i)) then
 			if( string.sub(thisname,i,i) == '/') then
 				i_this_slash = string.sub(thisname, i, thisLen)
 			end
 			if(	string.sub(thatname,i,i) == '/') then
-				i_that_slash = string.sub(thatname, i, thatLen)	
+				i_that_slash = string.sub(thatname, i, thatLen)
             end
         else
             break
@@ -843,9 +843,9 @@ end
 			for i = 1, thisSlashesLeft do
 				relative = relative.."../"
 			end
-			relative = relative..string.sub(i_that_slash, 2, thatSlashLen)			
+			relative = relative..string.sub(i_that_slash, 2, thatSlashLen)
 		else
-			-- !this_slashes_left && !that_slashes_left 
+			-- !this_slashes_left && !that_slashes_left
 			relative = relative.."./"
 			relative = relative..string.sub(i_that_slash, 2, thatSlashLen)
 		end
@@ -886,7 +886,7 @@ function GenerateItemName(dest_doc, name)
 	dest_doc:write("</p>")
 end
 
-function insertCSS(dest_doc, filename) 
+function insertCSS(dest_doc, filename)
 	if(css_name) then
 		varRelativeAddress = relativeAddress(filename,css_name)
 		assert(varRelativeAddress)
@@ -917,7 +917,7 @@ function GenerateEndPerformatted(dest_doc)
 end
 
 function GenerateBeginList(dest_doc)
-	dest_doc:write("<ul>") 
+	dest_doc:write("<ul>")
 end
 
 function GenerateEndList(dest_doc)
@@ -1021,7 +1021,7 @@ function GenerateIndexMenu(dest_doc, filename, document, cur_type )
 		if(header_type) then
 			targetfilename = GetSubIndexFileName(document.docroot.name,document.ext,header_type)
 			GenerateLink(dest_doc, filename, targetfilename, "top", header_type.indexName, "menuitem")
-			dest_doc:write("\n")		
+			dest_doc:write("\n")
 		end
 	end
 end
@@ -1055,7 +1055,7 @@ function GenerateTOCSection(dest_doc, dest_name, parent, headers, count, depth)
 
 	-- Do not generate section numbers if do_sectionsnameonly
 	if( not course_of_action.do_sectionsnameonly) then
-		for i=1, depth do 
+		for i=1, depth do
 			dest_doc:write(sectiontoc_counters[i]..".")
 		end
 		dest_doc:write(" ")
@@ -1074,7 +1074,7 @@ function GenerateTOCSection(dest_doc, dest_name, parent, headers, count, depth)
 		GenerateLink(dest_doc, dest_name, parent.file_name, parent.unique_name, parent.names[n], 0)
 	end
 	dest_doc:write("</li>\n");
-   
+
 	once = false
 	for i=1, count do
 		header = headers[i]
@@ -1139,7 +1139,7 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
                  * headers in the RB_Part.
 				 ]]
 				if( header.owner == owner) then
-					
+
                     --[[ Any of the parents of this header should not
                      * have the same owner as this header, otherwise
                      * this header will be part of the TOC multiple times.
@@ -1216,7 +1216,7 @@ function GenerateDocEnd(dest_doc, name, src_name)
 		TimeStamp(dest_doc)
 		dest_doc:write("</p>\n")
 	else
-		dest_doc:write("<p>Generated from"..src_name.." with <a href=\"http://www.xs4all.nl/~rfsber/Robo/robodoc.html\">ROBODoc</a> V"..VERSION.." on ") 
+		dest_doc:write("<p>Generated from"..src_name.." with <a href=\"http://www.xs4all.nl/~rfsber/Robo/robodoc.html\">ROBODoc</a> V"..VERSION.." on ")
 		TimeStamp(dest_doc)
 		dest_doc:write("</p>\n")
 	end
@@ -1245,7 +1245,7 @@ function GenerateLabel(dest_doc, name)
 	dest_doc:write("<a name=\"")
 	for i=1, #name do
 		c = string.sub(name,i,i)
-		----TODO------- 
+		----TODO-------
 		if(IsAlphaNumeric(c)) then
 			GenerateChar(dest_doc, c)
 		else
@@ -1253,6 +1253,20 @@ function GenerateLabel(dest_doc, name)
 		end
 	end
 	dest_doc:write("\"></a>\n")
+end
+
+--[[***f* HTML_Generator/RB_HTML_Generate_Line_Comment_End
+ * FUNCTION
+ *   Check if a line comment is active and generate ending sequence for it.
+ *   Should be called at the end of each SOURCE line.
+ * SYNOPSIS
+ ]]
+function GenerateLineCommentEnd(dest_doc)
+	--check if we are in a line comment 
+	if in_linecomment then
+		in_linecomment = 0
+		colorString(dest_doc, in_linecomment, COMMENT_CLASS, "")
+	end
 end
 
 --[[x**f* HTML_Generator/RB_HTML_Generate_Header_End

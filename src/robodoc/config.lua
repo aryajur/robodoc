@@ -94,7 +94,10 @@ local type = type
 local tonumber = tonumber
 local string = string
 local arg = arg		-- Command line arguments
-
+local io = io
+local load = load
+local os = os
+local pcall = pcall
 -- Note this file is Lua 5.3 compatible only because the way the load function is used in readConfigFile FUnction
 local M = {}
 package.loaded[...] = M
@@ -492,11 +495,13 @@ function readConfigFile(fileName)
 	-- Load the configuration
 	local safeenv = {}
 	local func,stat
+
 	func,msg = load(cdat,"Configuration","t",safeenv)
 	if not func then
 		logger:error("Cannot load configuration file: "..msg)
 		os.exit()
 	end
+
 	stat,msg = pcall(func)
 	if not stat then
 		logger:error("Error loading configuration file: "..msg)
