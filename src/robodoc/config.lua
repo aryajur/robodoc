@@ -98,6 +98,7 @@ local io = io
 local load = load
 local os = os
 local pcall = pcall
+local table = table
 -- Note this file is Lua 5.3 compatible only because the way the load function is used in readConfigFile FUnction
 local M = {}
 package.loaded[...] = M
@@ -432,7 +433,8 @@ local function validateConfigFile(config)
 			if type(v) ~= typ then
 				return nil,"All "..Name.." should be strings."
 			end
-		end		
+		end	
+		return true
 	end
 	for i = 1,#arrStrings do
 		if config[arrStrings[i]] and type(config[arrStrings[i]]) ~= "table" then
@@ -540,7 +542,7 @@ end
 -- Function to setup the configuration from the given configuration
 -- The function also parses any command line arguments, validates them and includes them in the configuration
 -- The command line configuration parameters take precedence over any similar options defined in the configuration file
-function setupConfig(config)
+function setupConfig(config,arg)
 	local configuration = {
 		items = defaultItems,
 		header_markers = defaultHeader_markers,
@@ -557,7 +559,7 @@ function setupConfig(config)
 	-- Read the options from the configuration file
 	local opts = {}
 	if config and config.options then
-		local options = " "..config.options
+		local options = " "..(type(config.options)=="string" and config.options or type(config.options)=="table" and table.concat(config.options," "))
 		for o in options:gmatch("%s%s*([^%s]+)") do
 			opts[#opts + 1] = o
 		end

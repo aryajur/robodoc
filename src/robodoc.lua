@@ -52,16 +52,33 @@ end
 -- Command line arguments
 globals.whoami = arg[0]
 
-local args = parser:parse()	-- Parse just to get the rc file to read the configuration
+local cfgFile
+local args = {}
+do
+	local i = 1
+	while i<#arg do
+		if arg[i] == "--rc" then
+			cfgFile = arg[i + 1]
+			i = i + 1
+		else
+			args[#args + 1] = arg[i]
+		end
+		i = i + 1
+	end
+end
+
 -- Steps to load the configuration
 -- # Load and validate the configuration file - done by config.readConfigFile
 -- # Run config.setupConfig to merge all options in the configuration file with the options in the command line arguments and set them up
 --       config.setupConfig returns the final combined arguments
-logger:info("Looking for configuration file "..args.rc)
-local cfg = config.readConfigFile(args.rc)	-- read the configuration file given by the name rc
+local cfg = {}
+if cfgFile then
+	logger:info("Looking for configuration file "..cfgFile)
+	cfg = config.readConfigFile(cfgFile)	-- read the configuration file given by the name rc
+end
 do 
 	local msg
-	args,msg = config.setupConfig(cfg)
+	args,msg = config.setupConfig(cfg,args)
 	if not args then
 		logger:error("Invalid Arguments: "..msg..". Exiting!")
 		os.exit()
@@ -72,6 +89,7 @@ globals.args = args
 -- Find the doctype
 --local doctype = tu.inArray(docformats,args,function(one,two) return two[one] end)
 doctype = 1
+local doctype = tu.inArray(docformats,args.output,function(one,two) return one.name == two end)
 local document = {
 	document_title = args.documenttitle,
 	doctype = doctype,

@@ -38,12 +38,13 @@ local license = [[Distributed under the GNU GENERAL PUBLIC LICENSE
  If you do not have it you can get it from URL
  http://www.gnu.org/copyleft/gpl.html
 ]] 
-
+--[[
 parser:option("--rc","Specify an alternate configuration file.")
 	:default("robodoc.rc")
 	:convert(globals.fileExists)
 	:args(1)
 	:count(1)
+]]
 parser:flag("--debug","same as --tell, but with lots more details.")
 	:action(function()
 			globals.logger:setlevel("DEBUG")
