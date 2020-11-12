@@ -4,7 +4,7 @@
 local tu = require("tableUtils")
 local globals = require("robodoc.globals")
 local logger = globals.logger
-local config = globals.configuration
+local config
 local html = globals.html
 local generator = require("robodoc.generator")
 
@@ -13,6 +13,7 @@ local tonumber = tonumber
 local pairs = pairs
 local string = string
 local next = next
+local io = io
 
 MIN_HEADER_TYPE = 1
 MAX_HEADER_TYPE = 127
@@ -160,7 +161,7 @@ local function getSourceFileList(srcPath,nodesc)
 				end
 			end
 		end
-		if not skip then
+		if not skip and isSourceFile(item) then
 			dir[#dir + 1] = {file=item,path=path}
 			dir.paths[#dir.paths + 1] = path
 		end
@@ -193,6 +194,9 @@ local function findMarker(fDat,start,markers,mi)
 		for i = 1,#markers do
 			fH(i)
 		end
+	end
+	if not strt then
+		return nil
 	end
 	local _,lineNum = fDat:sub(1,strt-1):gsub("\n","")
 	lineNum = tonumber(lineNum) + 2
@@ -818,7 +822,7 @@ local function createDocFilePaths(document)
 	-- First get the list of all documentation files
 	local docfiles = {}
 	for i = 1,#document.parts do
-		docfiles[i] = parts[i].docfile
+		docfiles[i] = document.parts[i].docfile
 	end
 	-- Sort the file list according to the path so that hierarchy is created from the top most path first
 	table.sort(docfiles,function(one,two) return one.path < two.path end)
@@ -991,7 +995,7 @@ local function genMultiDoc(document)
 		local srcname = document.parts[i].srcfile.file
 		local docname = document.parts[i].srcfile.path..document.parts[i].srcfile.file
 
-		if #document.header == 0 then
+		if #document.headers == 0 then
 			goto skip
 		end
 		if globals.docformats.name == "HTML" then
@@ -1032,6 +1036,7 @@ local function genMultiDoc(document)
 end
 
 function docgen(document)
+	config = globals.configuration
 	sourceExt = document.srcextension
 	if document.actions.do_multidoc then
 		logger:info("Scan source directory: "..document.srcroot)

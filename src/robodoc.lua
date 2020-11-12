@@ -18,7 +18,8 @@ local log_console = require"logging.console"				-- https://github.com/lunarmodul
 
 local logger = log_console()
 globals.logger = logger
-logger:setLevel("INFO")
+--logger:setLevel("INFO")
+logger:setLevel("DEBUG")
 
 local tu = require("tableUtils")			-- https://github.com/aryajur/tableUtils
 -- Using argparse module https://github.com/luarocks/argparse
