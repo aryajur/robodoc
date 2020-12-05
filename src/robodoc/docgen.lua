@@ -14,6 +14,7 @@ local pairs = pairs
 local string = string
 local next = next
 local io = io
+local assert = assert
 
 MIN_HEADER_TYPE = 1
 MAX_HEADER_TYPE = 127
@@ -31,7 +32,6 @@ end
 
 ]]
 local sourceExt
-
 
 --[[***f* HeaderTypes/RB_FindHeaderType
  * FUNCTION
@@ -66,9 +66,11 @@ function GetSubIndexFileName(docroot, extension, headertype)
  ]]
 	assert(docroot)
 	local filename = ""
-	filename = filename..docroot
-	filename = filename..headertype.filename
-	filename = filename..extension
+	if(headertype.fileName) then
+		filename = filename..docroot
+		filename = filename..headertype.fileName
+		filename = filename.."."..extension
+	end
 	return filename
 end
 
@@ -170,10 +172,11 @@ local function getSourceFileList(srcPath,nodesc)
 	return dir
 end
 
+
 local function findMarker(fDat,start,markers,mi)
 	local strt,tstrt,index,stp,tstp
 	local function fH(ind)
-		tstrt,tstp = fDat:find("\n%s*"..markers[ind],start,true)	-- Do a plain match
+		tstrt,tstp = fDat:find("****",start,true)	-- Do a plain match
 		if tstrt then
 			if not strt then
 				strt = tstrt
@@ -909,6 +912,7 @@ local function genMultiDoc(document)
 	if not stat then
 		return nil,msg
 	end
+
 	if document.actions.do_one_file_per_header then
 		logger:info("Generating file names for storing each header in a separate file.")
 		splitParts(document)
@@ -963,7 +967,7 @@ local function genMultiDoc(document)
 		for j = 1,#document.headers[i].names do
 			local name = document.headers[i].names[j]
 			document.links[#document.links + 1] = {
-				htype = docment.headers[i].htype,
+				htype = document.headers[i].htype,
 				internal = document.headers[i].internal,
 				file_name = document.headers[i].file_name,
 				object_name = name:find("%/") and name:match("%/(.-)$") or name,
@@ -986,21 +990,19 @@ local function genMultiDoc(document)
 	-- Sort all the links
 	table.sort(document.links,function(one,two) return one.object_name < two.object_name end)
 
-    logger:info("Creating CSS file..")
-	if(globals.docformats.name == "html") then
-		html.createCSS(document)
+	logger:info("Creating CSS file..")
+	if(globals.docformats[1].name == "html") then
+		globals.html.createCSS(document)
 	end
-
 	for i=1, #document.parts do
 		local srcname = document.parts[i].srcfile.file
 		local docname = document.parts[i].srcfile.path..document.parts[i].srcfile.file
-
 		if #document.headers == 0 then
 			goto skip
 		end
-		if globals.docformats.name == "HTML" then
+		if globals.docformats[1].name == "html" then
 
-			document_file, msg = io.Open(document.parts[i].srcfile.file)
+			document_file, msg = io.open(docname)
 			if not document_file then
 				logger:error("Cannot open file"..document.parts[i].srcfile.file)
 			end
@@ -1021,12 +1023,12 @@ local function genMultiDoc(document)
 				generator.GenerateTOC2(document_file,document.headers,document.no_headers,document.parts[i],docname)
 			end
 
-			generator.GeneratePart(document_file, document, i_part)
+			generator.GeneratePart(document_file, document, document.parts[i])
 			generator.GenerateEndContent(document_file)
 			generator.GenerateDocEnd(document_file,docname,srcname)
 			document_file:close()
 		else
-			generator.GeneratePart(document_file, document, i_part)
+			generator.GeneratePart(document_file, document, document.parts[i])
 		end
 		::skip::
 	end

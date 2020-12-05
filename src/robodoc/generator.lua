@@ -7,6 +7,9 @@ local tonumber = tonumber
 local pairs = pairs
 local string = string
 local next = next
+local tostring = tostring
+local logger = globals.logger
+local html = globals.html
 
 local M = {}
 package.loaded[...] = M
@@ -15,6 +18,35 @@ if setfenv and type(setfenv) == "function" then
 else
 	_ENV = M		-- Lua 5.2
 end
+
+local output_mode = "HTML"
+
+--[[***f* Filename/Get_Fullname
+ * NAME
+ *   Get_Fullname --
+ * SYNOPSIS
+ ]]
+ function GetFullName(filename)
+    --[[
+     * FUNCTION
+     *   Give the full name of the file, that is the name of
+     *   the file including the extension and the path.
+     *   The path can be relative or absolute.
+     * NOTE
+     *   The string returned is owned by this function
+     *   so don't change it.
+     * SOURCE
+     ]]
+    if filename.fulldocname ~= nil then
+        return filename.fullname
+    else
+        local result = ""
+        result = result..filename.path.name
+        result = result..filename.name
+        return result
+    end
+end
+
 
 function strcmp(a,b) return a==b end
 -- TODO Documentation */
@@ -444,8 +476,7 @@ function  GenerateDocStart(document, DestDoc, SrcName, title, toc, dest_name, ch
             XMLDBGenerateDocStart( document, DestDoc, charset )
         end,
         ['HTML'] = function()
-
-            html.GenerateDocStart( DestDoc, SrcName, title, dest_name,charset )
+            globals.html.GenerateDocStart( DestDoc, SrcName, title, dest_name,charset )
         end,
         ['LaTeX'] = function()
             LaTeXGenerateDocStart( DestDoc, SrcName, title, charset )
@@ -461,7 +492,7 @@ function  GenerateDocStart(document, DestDoc, SrcName, title, toc, dest_name, ch
         end
     }
 
-    local f = switch[string.upper(globals.docformats.name)]
+    local f = switch[output_mode]
     if (f) then
         f()
     else           --for default
@@ -501,7 +532,7 @@ function GenerateDocEnd(DestDoc, name, SrcName )
         end,
         ['HTML'] = function()
 
-            html.GenerateDocEnd( DestDoc, name, SrcName );
+            globals.html.GenerateDocEnd( DestDoc, name, SrcName );
         end,
         ['LaTeX'] = function()
             LaTeXGenerateDocEnd( DestDoc, name );
@@ -547,17 +578,17 @@ function GenerateHeaderStart(dest_doc, cur_header,srcRoot)
  ]]
     local switch = {
         ['TEST'] = function()
-            TESTGenerateHeaderStart(DestDoc, cur_header);
+            TESTGenerateHeaderStart(dest_doc, cur_header);
         end,
         ['XMLDB'] = function()
             XMLDBGenerateHeaderStart( document, cur_header, srcRoot );
         end,
         ['HTML'] = function()
 
-            html.GenerateHeaderStart( DestDoc, cur_header );
+            globals.html.GenerateHeaderStart( dest_doc, cur_header );
         end,
         ['LaTeX'] = function()
-            LaTeXGenerateHeaderStart( DestDoc, cur_header );
+            LaTeXGenerateHeaderStart( dest_doc, cur_header );
         end,
         ['RTF'] = function()
             RTFGenerateHeaderStart( dest_doc, cur_header );
@@ -610,7 +641,7 @@ function GenerateHeaderEnd(dest_doc, cur_header )
         end,
         ['HTML'] = function()
 
-            html.GenerateHeaderEnd( dest_doc, cur_header )
+            globals.html.GenerateHeaderEnd( dest_doc, cur_header )
         end,
         ['LaTeX'] = function()
             LaTeXGenerateHeaderEnd( dest_doc, cur_header )
@@ -689,7 +720,7 @@ end
 function GenerateBeginContent(dest_doc )
     local switch = {
         ['HTML'] = function()
-            HTMLGenerateBeginContent( dest_doc )
+            globals.html.GenerateBeginContent( dest_doc )
         end,
     }
 
@@ -704,7 +735,7 @@ end
 function GenerateEndContent(dest_doc )
     local switch = {
         ['HTML'] = function()
-            html.GenerateEndContent( dest_doc )
+            globals.html.GenerateEndContent( dest_doc )
         end,
     }
 
@@ -719,7 +750,7 @@ end
 function GenerateBeginNavigation(dest_doc )
     local switch = {
         ['HTML'] = function()
-            html.GenerateBeginNavigation( dest_doc )
+            globals.html.GenerateBeginNavigation( dest_doc )
         end,
     }
 
@@ -734,7 +765,7 @@ end
 function GenerateEndNavigation(dest_doc )
     local switch = {
         ['HTML'] = function()
-            html.GenerateEndNavigation( dest_doc )
+            globals.html.GenerateEndNavigation( dest_doc )
         end,
     }
 
@@ -749,7 +780,7 @@ end
 function GenerateIndexMenu(dest_doc, filename, document )
     local switch = {
         ['HTML'] = function()
-            html.GenerateIndexMenu( dest_doc, filename, document, nil )
+            globals.html.GenerateIndexMenu( dest_doc, filename, document, nil )
         end,
     }
 
@@ -802,7 +833,7 @@ function GenerateIndex(document )
 ]]
     local switch = {
         ['HTML'] = function()
-            HTMLGenerateEndExtra( dest_doc )
+            globals.html.GenerateIndex( document )
         end,
         ['LATEX'] = function()
             --Latex has a index by default
@@ -1055,11 +1086,12 @@ function GeneratePart(document_file, document, part)
      *                    in a single source file.
      * SOURCE
     ]]
-        logger:info("Generating documentation for file ",srcname)
+    logger:info(part.srcfile.file)
+        logger:info("Generating documentation for file "..part.srcfile.file)
         if( document.actions.do_singledoc) then
             docname = document.singledoc_name
         elseif document.actions.do_multidoc then
-            docname = document.parts.srcfile.path..document.parts.srcfile.file
+            docname = part.srcfile.path..part.srcfile.file
         elseif document.actions.do_singlefile then
             docname = document.singledoc_name
         else
@@ -1068,21 +1100,21 @@ function GeneratePart(document_file, document, part)
 
         -------Troff Mode -------
 
-        for i_header = 0, #part.headers do
-            logger:info("generating documentation for header",part.headers[i_header].name)
-            document_file = generator.GenerateHeaderStart(document_file, part.headers[i_header],document.srcroot.name)
-            generator.GenerateNavBar(document, document_file, part.headers[i_header])
+        for i_header = 1, #part.headers do
+            logger:info("generating documentation for header "..part.headers[i_header].names[1])
+            document_file = GenerateHeaderStart(document_file, part.headers[i_header],document.srcroot.name)
+            GenerateNavBar(document, document_file, part.headers[i_header])
             --RB_html_Generate_index_entry is not availabe in robodoc
             --generator.GenerateIndexEntry(document_file, document.doctype, part.headers[i_header])
-            generator.GenerateHeader(document_file, part.headers[i_header], docname)
-            generator.GenerateHeaderEnd(document_file, part.headers[i_header])
+            GenerateHeader(document_file, part.headers[i_header], docname)
+            GenerateHeaderEnd(document_file, part.headers[i_header])
         end
 end
 
 function GenerateNavBar(document, current_doc, current_header)
     local switch = {
         ['HTML'] = function()
-            html.GenerateNavBar( dest_doc )
+            globals.html.GenerateNavBar( document, current_doc, current_header)
         end,
     }
 

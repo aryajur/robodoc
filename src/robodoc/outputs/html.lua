@@ -17,8 +17,18 @@ local globals = require("robodoc.globals")
 local docformats = globals.docformats
 local logger = globals.logger
 local os = os
+local io = io
 local docgen = require("robodoc.docgen")
 local bool = bool
+local string = string
+local assert = assert
+local math = math
+local print = print
+local pairs = pairs 
+
+local MIN_HEADER_TYPE = 1
+local MAX_HEADER_TYPE = 127
+local MAX_SECTION_DEPTH = 7
 
 local M = {}
 package.loaded[...] = M
@@ -56,7 +66,7 @@ end
 
 function TOCIndexFilename(document)
 	toc_index_name = "toc_index.html"
-	toc_index_path = document.docroot.name..toc_index_name
+	toc_index_path = document.docroot..toc_index_name
 	return toc_index_name
 end
 
@@ -136,14 +146,15 @@ function createCSS(document)
  ]]
 	local cssfile = ""
 
-	if(document.action.do_multidoc) then
-		cssfile = string.copy(document.docroot)
+	--if(document.action.do_multidoc) then
+	if(true) then
+		cssfile = document.docroot
 		cssfile = cssfile.."robodoc.css"
 	end
 
 	if(document.css) then
 		-- The user specified its own css file,
-        -- so we use the content of that.
+		-- so we use the content of that.
 		local docCss = io.open(document.css,"r")
 		local data = docCss:read("*a");
 		docCss:close()
@@ -485,7 +496,8 @@ function GenerateDocStart(dest_doc, src_name, name, dest_name, charset)
  *   o charset   --  the charset to be used for the file.
  * SOURCE
  ]]
-	if(document.action.do_headless) then
+	--if(course_of_action.do_headless) then
+	if false then
 		-- The user wants a headless document, so we skip everything
         -- upto and until <BODY>
 	else
@@ -500,10 +512,10 @@ function GenerateDocStart(dest_doc, src_name, name, dest_name, charset)
 		dest_doc:write("<title>"..name.."</title>\n")
 		dest_doc:write("<!-- Source: "..src_name.." -->\n")
 
-		if (course_of_action.do_nogenwith) then
+		--[[if (course_of_action.do_nogenwith) then
 		else
 			-- copyright comment
-		end
+		end]]
 		dest_doc:write("</head>\n")
 		dest_doc:write("<body>\n")
 
@@ -583,7 +595,7 @@ function GenerateString(dest_doc, a_string)
 ]]
     l = #a_string
     for i=0,#a_string do
-        c = a_string[i];
+		c = a_string:sub(i,i);
         GenerateChar(dest_doc, c);
 	end
 end
@@ -739,8 +751,9 @@ end
  *   RB_HTML_Generate_Link --
  * SYNOPSIS
  ]]
-function GenerateLink(dest_doc, cur_name,filename,labelname,linkname,classname)
---[[
+function GenerateLink(cur_doc, cur_name,filename,labelname,linkname,classname)
+
+	--[[
  * INPUTS
  *   cur_doc  --  the file to which the text is written
  *   cur_name --  the name of the destination file
@@ -752,19 +765,20 @@ function GenerateLink(dest_doc, cur_name,filename,labelname,linkname,classname)
  * SOURCE
  ]]
 	if(classname) then
-		dest_doc:write("<a class=\""..classname.."\"")
+		cur_doc:write("<a class=\""..classname.."\"")
 	else
-		dest_doc:write("<a ")
+		cur_doc:write("<a ")
 	end
 	if( filename and strcmp(filename,cur_name)) then
 		local varRelativeAddress = relativeAddress(cur_name,filename)
-		dest_doc:write("href=\""..varRelativeAddress.."#"..labelname.."\">")
+		cur_doc:write("href=\""..varRelativeAddress.."#"..labelname.."\">")
 		GenerateString(cur_doc, linkname)
-		dest_doc:write("</a>")
+		cur_doc:write("</a>")
 	else
-		dest_doc:write("href=\"#"..labelname.."\">")
+		--TODO--
+		--cur_doc:write("href=\"#"..labelname.."\">")
 		GenerateString(cur_doc, linkname)
-		dest_doc:write("</a>")
+		cur_doc:write("</a>")
 	end
 end
 
@@ -960,22 +974,24 @@ function GenerateNavBarOneFilePerHeader(document, current_doc, current_header )
 	end
 	-- FS TODO  one_file_per_header without   index is not logical
 	if( (course_of_action.do_index ) and (course_of_action.do_multidoc)) then
-		target_filename = docgen.GetSubIndexFileName(document.docroot.name, docuement.extension, current_header.htype)
+		target_filename = docgen.GetSubIndexFileName(document.docroot, docuement.extension, current_header.htype)
 		label_name = current_header.htype.indexName
 		GenerateLink(current_doc, current_filename, target_filename, "robo_top_of_doc", label_name, "menuitem")
 	end
 end
 
 function GenerateHeaderStart(dest_doc, cur_header)
-	if(cur_header.name and cur_header.filename) then
+	logger:info("generate header start ........")
+	if(cur_header.names[1]) then
 		dest_doc:write("<hr />\n")
-		GenerateLabel(dest_doc, cur_header.name)
+		GenerateLabel(dest_doc, cur_header.names[1])
 		dest_doc:write("<a name=\""..cur_header.unique_name.."\"></a><h2>")
-		header_type = docgen.FindHeaderType(cur_header.htype.typeCharacter)
+		header_type = globals.configuration.headertypes[cur_header.htype]
 		for i=1, #cur_header.names do
 			-- If Section names only, do not print module name
-			if(i==1 and course_of_action.do_sectionsnameonly) then
-				GenerateString(dest_doc,cur_header.functioin_name)
+			--if(i==1 and course_of_action.do_sectionsnameonly) then
+			if true then
+				GenerateString(dest_doc, cur_header.names[1])
 			else
 				GenerateString(dest_doc, cur_header.names[i-1])
 			end
@@ -989,7 +1005,8 @@ function GenerateHeaderStart(dest_doc, cur_header)
 			end
 		end
 		-- Print header type (if available and not Section names only)
-		if(header_type and not (course_of_action.do_sectionsnameonly)) then
+		--if(header_type and not (course_of_action.do_sectionsnameonly)) then
+		if header_type then
 			dest_doc:write(" [ ")
 			GenerateString(dest_doc, header_type.indexName)
 			dest_doc:write(" ] ")
@@ -1016,12 +1033,14 @@ function GenerateIndexMenu(dest_doc, filename, document, cur_type )
  ]]
 	GenerateLink(dest_doc, filename, TOCIndexFilename(document), "top", "Table of Contents", "menuitem")
 	dest_doc:write("\n")
-	for type_char = MIN_HEADER_TYPE,MAX_HEADER_TYPE do
-		header_type = header_tyep_lookup_table[type_char] --TODO-- 	have to create header type lookup table.
+	for type_char = MIN_HEADER_TYPE, MAX_HEADER_TYPE do
+		header_type = globals.configuration.headertypes[type_char] --TODO-- 	have to create header type lookup table.
 		if(header_type) then
-			targetfilename = GetSubIndexFileName(document.docroot.name,document.ext,header_type)
-			GenerateLink(dest_doc, filename, targetfilename, "top", header_type.indexName, "menuitem")
-			dest_doc:write("\n")
+			targetfilename = docgen.GetSubIndexFileName(document.docroot, document.extension,header_type)
+			if #targetfilename > 0 then
+				GenerateLink(dest_doc, filename, targetfilename, "top", header_type.indexName, "menuitem")
+				dest_doc:write("\n")
+			end
 		end
 	end
 end
@@ -1047,6 +1066,7 @@ function GenerateTOCSection(dest_doc, dest_name, parent, headers, count, depth)
  * SOURCE
  ]]
 	sectiontoc_counters = {}
+	local depth = 1
 	for i=1, MAX_SECTION_DEPTH do
 		sectiontoc_counters[i] = 0
 	end
@@ -1054,22 +1074,29 @@ function GenerateTOCSection(dest_doc, dest_name, parent, headers, count, depth)
 	dest_doc:write("<li>")
 
 	-- Do not generate section numbers if do_sectionsnameonly
-	if( not course_of_action.do_sectionsnameonly) then
+	--if( not course_of_action.do_sectionsnameonly) then
+	--ToDO--
+	if true then 
 		for i=1, depth do
 			dest_doc:write(sectiontoc_counters[i]..".")
 		end
 		dest_doc:write(" ")
 	end
 	local var
-	if(course_of_action.do_sectionsnameonly) then
+	--if(course_of_action.do_sectionsnameonly) then
+	if true then 
 		var = parent.function_name
 	else
 		var = parent.name
 	end
-	GenerateLink(dest_doc, dest_name, file_name, parent.unique_name,var,0)
+
+	--GenerateLink(dest_doc, dest_name, file_name, parent.unique_name,var,0)
+	
+	GenerateLink(dest_doc, dest_name, parent.file_name, parent.name, var,0)
 
 	-- Generate links to further reference names
-	for n=1, parent.no_names do
+	
+	for n=1, #parent.names do
 		GenerateString(dest_doc, ", ")
 		GenerateLink(dest_doc, dest_name, parent.file_name, parent.unique_name, parent.names[n], 0)
 	end
@@ -1114,11 +1141,13 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
  * SOURCE
  ]]
 	sectiontoc_counters = {}
+	local depth = 1
 	for i=1,MAX_SECTION_DEPTH do  --todo------------
 		sectiontoc_counters[i]= 0;
 	end
 	dest_doc:write("<h3>TABLE OF CONTENTS</h3>\n")
-	if(course_of_action.do_sections) then
+	--if(course_of_action.do_sections) then
+	if true then
 		--[[ --sections was specified, create a TOC based on the
          * hierarchy of the headers.
 		 ]]
@@ -1179,10 +1208,11 @@ function GenerateTOC2(dest_doc, headers, count, owner, dest_name)
 end
 
 
-function GenerateNavBar(dcument, current_doc, current_header)
-	current_filename = docgen.GetFullDocname(current_header.owner.filename)
-	target_filename = docgen.GetFullDocname(current_header.owner.filename)
-	label = docgen.GetFullName(current_header.owner.filename)
+function GenerateNavBar(document, current_doc, current_header)
+	logger:info(current_header.names[1])
+	current_filename = current_header.names[1]
+	target_filename = current_header.names[1]
+	label = current_header.names[1]
 	-- Then navigation bar
 	current_doc:write("<p>")
 	current_doc:write("[ ")
@@ -1199,10 +1229,12 @@ function GenerateNavBar(dcument, current_doc, current_header)
 		current_doc:write(" ] ")
 	end
 	current_doc:write("[ ")
-	label_name = current_header.htype.indexName
-	if( ( course_of_action.do_index) and (course_of_action.do_multidoc)) then
-		target_filename = GetSubIndexFileName(document.docroot.name, document.extension, current_header.htype)
-		GenerateLink(curren_doc, current_filename, target_filename, "robo_top_of_doc", label_name, 0)
+	
+	label_name = globals.configuration.headertypes[current_header.htype].indexName
+	--if( ( course_of_action.do_index) and (course_of_action.do_multidoc)) then
+	if true then
+		target_filename = docgen.GetSubIndexFileName(document.docroot, document.extension, globals.configuration.headertypes[current_header.htype])
+		GenerateLink(current_doc, current_filename, target_filename, "robo_top_of_doc", label_name, 0)
 	else
 		GenerateString(current_doc, label_name)
 	end
@@ -1211,7 +1243,8 @@ end
 
 function GenerateDocEnd(dest_doc, name, src_name)
 	GenerateDiv(dest_doc, "footer")
-	if(course_of_action.do_nogenwith) then
+	--if(course_of_action.do_nogenwith) then
+	if true then
 		dest_doc:write("<p>Generated from "..src_name.." on ")
 		TimeStamp(dest_doc)
 		dest_doc:write("</p>\n")
@@ -1221,7 +1254,8 @@ function GenerateDocEnd(dest_doc, name, src_name)
 		dest_doc:write("</p>\n")
 	end
 	GenerateDivEnd(dest_doc, "footer")
-	if(course_of_action.do_footless) then
+	--if(course_of_action.do_footless) then
+	if false then
 	else
 		dest_doc:write("</body>\n</html>\n")
 	end
@@ -1246,7 +1280,7 @@ function GenerateLabel(dest_doc, name)
 	for i=1, #name do
 		c = string.sub(name,i,i)
 		----TODO-------
-		if(IsAlphaNumeric(c)) then
+		if(c:match("%w")) then
 			GenerateChar(dest_doc, c)
 		else
 
@@ -1278,6 +1312,81 @@ end
 	dest_doc:write("\n")
  end
 
+
+-- Create an index page that contains only the table of content */
+
+function GenerateTocIndexPage(document)
+	local toc_index_path = TOCIndexFilename(document)
+	local file, msg = io.open(toc_index_name, "w")
+	if not file then 
+		logger:error("Can't open file "..toc_index_name)
+	else
+		GenerateDocStart(file, document.srcroot, "Table of Contents", toc_index_path, document.charset)
+		GenerateBeginExtra(file)
+		GenerateEndExtra(file)
+		GenerateBeginNavigation(file)
+		GenerateIndexMenu(file, toc_index_path, document, nil)
+		GenerateEndNavigation(file)
+		GenerateBeginContent(file)
+		--Todo 2 should be number of headers
+		GenerateTOC2(file, document.headers, 2, nil, toc_index_path)
+		GenerateEndContent(file)
+		GenerateDocEnd(file, toc_index_path, document.srcroot)
+		file:close()
+	end
+end
+
+function GenerateIndex(document)
+	-- There are headers of this type, so create an index page
+	-- for them
+    for type_char= MIN_HEADER_TYPE, MAX_HEADER_TYPE do
+		header_type = globals.configuration.headertypes[type_char]
+		--todo
+        if header_type then
+			GenerateIndexPage(document, header_type)
+		end
+	end
+	GenerateIndexPage(document, globals.configuration.headertypes[2]) --MasterIndex type
+	GenerateTocIndexPage(document)
+end
+
+--[[***f* HTML_Generator/RB_HTML_Generate_Index_Page
+ * FUNCTION
+ *   Generate a single file with a index table for headers
+ *   of one specific type of headers
+ * SYNOPSIS
+]]
+function GenerateIndexPage(document, header_type)
+--[[
+ * INPUTS
+ *   o document    -- the document
+ *   o header_type -- the type for which the table is to
+ *                    be generated.
+ ******
+ ]]
+	assert(document)
+	assert(header_type)
+	filename = docgen.GetSubIndexFileName(document.docroot, document.extension, header_type)
+	
+	if (#filename > 0) then
+		local file,msg = io.open(filename, "w")
+		if not file then
+			logger:error("Cannot open file "..filename)
+		else
+			GenerateDocStart(file, document.srcroot, header_type.indexName, filename, document.charset)
+			GenerateBeginExtra(file)
+			GenerateEndExtra(file)
+			GenerateBeginNavigation(file)
+			GenerateIndexMenu(file, filename, document, header_type)
+			GenerateEndNavigation(file)
+			GenerateBeginContent(file)
+			---TODO----
+			GenerateEndContent(file)
+			GenerateDocEnd(file, filename, document.srcroot)
+			file:close()
+		end
+	end
+end
 
 function TimeStamp(dest_doc)
 	dest_doc:write(os.date())
