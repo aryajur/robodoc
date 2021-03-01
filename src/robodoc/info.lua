@@ -38,12 +38,13 @@ local license = [[Distributed under the GNU GENERAL PUBLIC LICENSE
  If you do not have it you can get it from URL
  http://www.gnu.org/copyleft/gpl.html
 ]] 
-
+--[[
 parser:option("--rc","Specify an alternate configuration file.")
 	:default("robodoc.rc")
 	:convert(globals.fileExists)
 	:args(1)
 	:count(1)
+]]
 parser:flag("--debug","same as --tell, but with lots more details.")
 	:action(function()
 			globals.logger:setlevel("DEBUG")
@@ -95,9 +96,9 @@ parser:flag("--source_line_numbers","Display original source line numbers for SO
 parser:flag("--altlatex","Alternate LaTeX file format (bigger / clearer than normal)")
 parser:flag("--latexparts",help="Make the first module level as PART in LaTeX output")
 ]]
-parser.option("--charset","Add character encoding information."):args(1)
-parser.option("--ext","Set extension for generated files."):args(1)
-parser.option("--srcext","Set extension for source files."):args("+"):count(1)
+parser:option("--charset","Add character encoding information."):args(1)
+parser:option("--ext","Set extension for generated files."):args(1)
+parser:option("--srcext","Set extension for source files."):args("+"):count(1)
 -- The css option is removed from here since html will manage it
 --parser.option("--css","Specify the stylesheet to use."):convert(io.open):args(1)
 -- The following option for troff was removed. The troff exporter should handle it
